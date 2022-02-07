@@ -12,6 +12,7 @@ where
 
 import Data.Data (Data)
 
+-- | Allen's Interval algebra
 data Overlap
   = Before
   | Meets
