@@ -1,0 +1,73 @@
+cabal-version: 3.6
+name: timeframes
+version: 0.0.1.0
+author: Melanie Brown
+maintainer: brown.m@pm.me
+copyright: 2021 Melanie Brown
+license: BSD-3-Clause
+license-file: LICENSE
+homepage: https://github.com/cigsender/timeframes
+bug-reports: https://github.com/cigsender/timeframes/issues
+extra-source-files:
+  CHANGELOG.md
+
+common timeframes
+  build-depends:
+    base >= 4.11 && < 5
+    , relude >= 1.0.0.1 && < 1.1
+    , time
+    , time-compat >= 1.9.6.1 && < 1.10
+  default-extensions:
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedStrings
+    PatternSynonyms
+    PolyKinds
+    QuasiQuotes
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    StandaloneKindSignatures
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    ViewPatterns
+  ghc-options:
+    -Wall
+    -Wno-unticked-promoted-constructors
+  mixins:
+    base hiding (Prelude)
+    , relude (Relude as Prelude)
+    , relude
+
+library
+  import: timeframes
+  hs-source-dirs: src
+  exposed-modules:
+    Data.Suspension
+    Data.Interval
+    -- Data.Interval.Nesting
+    Data.Interval.Overlap
+    Data.Interval.Set
+    Data.Timeframe
+    Data.OneOrTwo
