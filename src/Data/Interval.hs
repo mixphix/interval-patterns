@@ -1,3 +1,6 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
+
 -- |
 -- Module       : Data.Interval
 -- Copyright    : (c) Melanie Brown 2022
@@ -8,8 +11,14 @@ module Data.Interval
   ( Extremum (..),
     opposite,
     Bound (..),
+    unBound,
+    Oppose (..),
     compareBounds,
+    SomeBound (..),
+    oppose,
     Interval (..),
+    bounds,
+    withBounds,
     pattern (:<->:),
     pattern (:<-|:),
     pattern (:|->:),
@@ -25,7 +34,9 @@ module Data.Interval
     isup,
     imax,
     lower,
+    lowerBound,
     upper,
+    upperBound,
     hull,
     hulls,
     within,
@@ -34,7 +45,14 @@ module Data.Interval
     close,
     openclosed,
     closedopen,
+    openLower,
+    closedLower,
+    openUpper,
+    closedUpper,
+    setLower,
+    setUpper,
     overlap,
+    split,
     intersect,
     union,
     unions,
@@ -53,6 +71,7 @@ import Data.Data (Data)
 import Data.Interval.Overlap
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Suspension (Suspension (..))
+import Data.UpToThree
 import GHC.Show qualified (show)
 
 -- | The kinds of extremum an interval can have.
@@ -65,6 +84,8 @@ data Extremum
 
 -- | The 'opposite' of an extremum is how it would be viewed
 -- from the other "direction" of how it is currently.
+--
+-- c.f. 'opposeBound'.
 opposite :: Extremum -> Extremum
 opposite = \case
   Minimum -> Supremum
@@ -79,6 +100,14 @@ data Bound ext x where
   Inf :: x -> Bound Infimum x
   Sup :: x -> Bound Supremum x
   Max :: x -> Bound Maximum x
+
+-- | Extract the term from a 'Bound'.
+unBound :: Bound ext x -> x
+unBound = \case
+  Min x -> x
+  Inf x -> x
+  Sup x -> x
+  Max x -> x
 
 instance Functor (Bound ext) where
   fmap f = \case
@@ -106,6 +135,30 @@ instance (Eq x) => Eq (Bound ext x) where
   Inf x == Inf y = x == y
   Sup x == Sup y = x == y
   Max x == Max y = x == y
+
+-- | A type class for inverting 'Bound's.
+type Oppose :: Extremum -> Constraint
+class Oppose ext where
+  type Opposite ext :: Extremum
+
+  -- | c.f. 'opposite'.
+  opposeBound :: Bound ext x -> Bound (Opposite ext) x
+
+instance Oppose Minimum where
+  type Opposite Minimum = Supremum
+  opposeBound (Min x) = Sup x
+
+instance Oppose Infimum where
+  type Opposite Infimum = Maximum
+  opposeBound (Inf x) = Max x
+
+instance Oppose Supremum where
+  type Opposite Supremum = Minimum
+  opposeBound (Sup x) = Min x
+
+instance Oppose Maximum where
+  type Opposite Maximum = Infimum
+  opposeBound (Max x) = Inf x
 
 -- | 'Bound's have special comparison rules for identical points.
 --
@@ -253,6 +306,40 @@ orient = \case
   l :|->: u -> min l u :|->: max l u
   l :|-|: u -> min l u :|-|: max l u
 
+data SomeBound x
+  = forall ext.
+    ( Oppose ext,
+      Oppose (Opposite ext),
+      Opposite (Opposite ext) ~ ext
+    ) =>
+    SomeBound (Bound ext x)
+
+oppose :: SomeBound x -> SomeBound x
+oppose (SomeBound b) = SomeBound (opposeBound b)
+
+bounds :: Interval x -> (SomeBound (Suspension x), SomeBound (Suspension x))
+bounds = \case
+  l :<-->: u -> (SomeBound l, SomeBound u)
+  l :<--|: u -> (SomeBound l, SomeBound u)
+  l :|-->: u -> (SomeBound l, SomeBound u)
+  l :|--|: u -> (SomeBound l, SomeBound u)
+
+withBounds ::
+  (Ord x) =>
+  SomeBound (Suspension x) ->
+  SomeBound (Suspension x) ->
+  Interval x
+withBounds (SomeBound b1) (SomeBound b2) = orient $ case (b1, b2) of
+  (Min l, Max u) -> l :|-|: u
+  (Inf l, Max u) -> l :<-|: u
+  (Min l, Sup u) -> l :|->: u
+  (Inf l, Sup u) -> l :<->: u
+  (Max u, Min l) -> l :|-|: u
+  (Max u, Inf l) -> l :<-|: u
+  (Sup u, Min l) -> l :|->: u
+  (Sup u, Inf l) -> l :<->: u
+  _ -> error "cannot make an interval with the given bounds"
+
 -- | Get the lower bound of an interval
 -- (with the bound expressed at the term level).
 lower :: (Ord x) => Interval x -> (Suspension x, Extremum)
@@ -263,6 +350,14 @@ lower =
     l :|->: _ -> (l, Minimum)
     l :|-|: _ -> (l, Minimum)
 
+lowerBound :: (Ord x) => Interval x -> SomeBound (Suspension x)
+lowerBound =
+  orient >>> \case
+    l :<->: _ -> SomeBound (Inf l)
+    l :<-|: _ -> SomeBound (Inf l)
+    l :|->: _ -> SomeBound (Min l)
+    l :|-|: _ -> SomeBound (Min l)
+
 -- | Get the upper bound of an interval
 -- (with the bound expressed at the term level).
 upper :: (Ord x) => Interval x -> (Suspension x, Extremum)
@@ -272,6 +367,14 @@ upper =
     _ :<-|: u -> (u, Maximum)
     _ :|->: u -> (u, Supremum)
     _ :|-|: u -> (u, Maximum)
+
+upperBound :: (Ord x) => Interval x -> SomeBound (Suspension x)
+upperBound =
+  orient >>> \case
+    _ :<->: u -> SomeBound (Sup u)
+    _ :<-|: u -> SomeBound (Max u)
+    _ :|->: u -> SomeBound (Sup u)
+    _ :|-|: u -> SomeBound (Max u)
 
 -- | Get the convex hull of two intervals.
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
@@ -379,6 +482,58 @@ closedopen =
     l :|->: u -> l :|-|: u
     l :|-|: u -> l :|-|: u
 
+-- | Make the lower bound open, leaving the endpoints unchanged.
+openLower :: (Ord x) => Interval x -> Interval x
+openLower =
+  orient >>> \case
+    l :<->: u -> l :<->: u
+    l :<-|: u -> l :<-|: u
+    l :|->: u -> l :<->: u
+    l :|-|: u -> l :<-|: u
+
+-- | Make the lower bound closed, leaving the endpoints unchanged.
+closedLower :: (Ord x) => Interval x -> Interval x
+closedLower =
+  orient >>> \case
+    l :<->: u -> l :|->: u
+    l :<-|: u -> l :|-|: u
+    l :|->: u -> l :|->: u
+    l :|-|: u -> l :|-|: u
+
+-- | Make the upper bound open, leaving the endpoints unchanged.
+openUpper :: (Ord x) => Interval x -> Interval x
+openUpper =
+  orient >>> \case
+    l :<->: u -> l :<->: u
+    l :<-|: u -> l :<->: u
+    l :|->: u -> l :|->: u
+    l :|-|: u -> l :|->: u
+
+-- | Make the upper bound closed, leaving the endpoints unchanged.
+closedUpper :: (Ord x) => Interval x -> Interval x
+closedUpper =
+  orient >>> \case
+    l :<->: u -> l :<-|: u
+    l :<-|: u -> l :<-|: u
+    l :|->: u -> l :|-|: u
+    l :|-|: u -> l :|-|: u
+
+setLower :: (Ord x) => Suspension x -> Interval x -> Interval x
+setLower x =
+  orient >>> \case
+    _ :<->: u -> x :<->: u
+    _ :<-|: u -> x :<-|: u
+    _ :|->: u -> x :|->: u
+    _ :|-|: u -> x :|-|: u
+
+setUpper :: (Ord x) => Suspension x -> Interval x -> Interval x
+setUpper x =
+  orient >>> \case
+    l :<->: _ -> l :<->: x
+    l :<-|: _ -> l :<-|: x
+    l :|->: _ -> l :|->: x
+    l :|-|: _ -> l :|-|: x
+
 -- | Calculate the overlap relationship between two intervals, according to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
 overlap :: (Ord x) => Interval x -> Interval x -> Overlap
@@ -408,6 +563,58 @@ overlap (orient -> i1) (orient -> i2) =
     (l2, lb2) = lower i2
     (u1, ub1) = upper i1
     (u2, ub2) = upper i2
+
+-- | Two intervals can overlap and be 'split' into at most 3 distinct intervals:
+--
+--  - if they are identical, then the left argument is returned;
+--  - if they do not overlap, they are returned in lexicographical order;
+--  - if they do overlap:
+--    - and they do not share an endpoint, the intersection is returned
+--      as the middle of three, with the others having that portion removed;
+--    - and they share an endpoint, the intersection is returned
+--      in the side of the two where the endpoint matches.
+split :: (Ord x) => Interval x -> Interval x -> UpToThree (Interval x)
+split (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+  Before -> Double i1 i2
+  Meets ->
+    Triple
+      (openUpper i1)
+      (withBounds lb2 ub1)
+      (openLower i2)
+  Overlaps ->
+    Triple
+      (withBounds lb1 (oppose lb2))
+      (withBounds lb2 ub1)
+      (withBounds (oppose ub1) ub2)
+  Starts -> Double i1 (withBounds (oppose ub1) ub2)
+  During ->
+    Triple
+      (withBounds lb2 (oppose lb1))
+      (withBounds lb1 ub1)
+      (withBounds (oppose ub1) ub2)
+  Finishes -> Double (withBounds lb1 (oppose lb2)) i2
+  Identical -> Single i1
+  FinishedBy -> Double (withBounds lb2 (oppose lb1)) i1
+  Contains ->
+    Triple
+      (withBounds lb1 (oppose lb2))
+      (withBounds lb2 ub2)
+      (withBounds (oppose ub2) ub1)
+  StartedBy -> Double i2 (withBounds (oppose ub2) ub1)
+  OverlappedBy ->
+    Triple
+      (withBounds lb2 (oppose lb1))
+      (withBounds lb1 ub2)
+      (withBounds (oppose ub2) ub1)
+  MetBy ->
+    Triple
+      (openUpper i2)
+      (withBounds lb1 ub2)
+      (openLower i1)
+  After -> Double i2 i1
+  where
+    (lb1, ub1) = bounds i1
+    (lb2, ub2) = bounds i2
 
 -- | Calculate the intersection of two intervals, if it exists.
 --
