@@ -29,6 +29,7 @@ data Overlap
   | After
   deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Data, Typeable)
 
+-- | The result of having compared the same two intervals in reverse order.
 converseOverlap :: Overlap -> Overlap
 converseOverlap = \case
   Before -> After
