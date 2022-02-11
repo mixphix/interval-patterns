@@ -1,19 +1,19 @@
 -- |
--- Module       : Data.Interval.Overlap
+-- Module       : Data.Interval.Adjacency
 -- Copyright    : (c) Melanie Brown 2021
 -- License:     : BSD3 (see the file LICENSE)
 --
 -- Allen's interval algebra.
-module Data.Interval.Overlap
-  ( Overlap (..),
-    converseOverlap,
+module Data.Interval.Adjacency
+  ( Adjacency (..),
+    converseAdjacency,
   )
 where
 
 import Data.Data (Data)
 
 -- | Allen's Interval algebra
-data Overlap
+data Adjacency
   = Before
   | Meets
   | Overlaps
@@ -30,8 +30,8 @@ data Overlap
   deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Data, Typeable)
 
 -- | The result of having compared the same two intervals in reverse order.
-converseOverlap :: Overlap -> Overlap
-converseOverlap = \case
+converseAdjacency :: Adjacency -> Adjacency
+converseAdjacency = \case
   Before -> After
   Meets -> MetBy
   Overlaps -> OverlappedBy

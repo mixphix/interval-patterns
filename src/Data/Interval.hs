@@ -51,7 +51,7 @@ module Data.Interval
     closedUpper,
     setLower,
     setUpper,
-    overlap,
+    adjacency,
     split,
     intersect,
     union,
@@ -63,15 +63,15 @@ module Data.Interval
     measuring,
     hausdorff,
     (+/-),
-    module Data.Interval.Overlap,
+    module Data.Interval.Adjacency,
   )
 where
 
 import Data.Data (Data)
-import Data.Interval.Overlap
+import Data.Interval.Adjacency
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Suspension (Suspension (..))
-import Data.UpToThree
+import Data.UpToThree (UpToThree (..))
 import GHC.Show qualified (show)
 
 -- | The kinds of extremum an interval can have.
@@ -534,10 +534,10 @@ setUpper x =
     l :|->: _ -> l :|->: x
     l :|-|: _ -> l :|-|: x
 
--- | Calculate the overlap relationship between two intervals, according to
+-- | Calculate the adjacency relationship between two intervals, according to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
-overlap :: (Ord x) => Interval x -> Interval x -> Overlap
-overlap (orient -> i1) (orient -> i2) =
+adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency
+adjacency (orient -> i1) (orient -> i2) =
   case (on compare lower i1 i2, on compare upper i1 i2) of
     (LT, LT) -> case u1 `compare` l2 of
       LT -> Before
@@ -574,7 +574,7 @@ overlap (orient -> i1) (orient -> i2) =
 --    - and they share an endpoint, the intersection is returned
 --      in the side of the two where the endpoint matches.
 split :: (Ord x) => Interval x -> Interval x -> UpToThree (Interval x)
-split (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+split (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
   Before -> Double i1 i2
   Meets ->
     Triple
@@ -635,7 +635,7 @@ intersect ::
   Interval x ->
   Interval x ->
   Maybe (Interval x)
-intersect (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+intersect (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
   Before -> Nothing
   Meets -> Just (u1 :|-|: u1)
   Overlaps -> Just j1
@@ -681,7 +681,7 @@ union ::
   Interval x ->
   Interval x ->
   OneOrTwo (Interval x)
-union (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+union (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
   Before
     | u1 == l2 -> case (ub1, lb2) of
       (Supremum, Infimum) -> Two i1 i2
@@ -751,7 +751,7 @@ difference ::
   Interval x ->
   Interval x ->
   Maybe (OneOrTwo (Interval x))
-difference (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+difference (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
   Before -> Just (One i1)
   Meets -> Just . One $ case lb1 of
     Infimum -> l1 :<->: u1
@@ -844,7 +844,7 @@ measuring f =
     l :<-|: u -> if l == u then Just 0 else Nothing
     l :<->: u -> if l == u then Just 0 else Nothing
 
--- | Get the distance between two intervals, or 0 if they overlap.
+-- | Get the distance between two intervals, or 0 if they adjacency.
 --
 -- @
 --
@@ -856,7 +856,7 @@ measuring f =
 --
 -- @
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
-hausdorff (orient -> i1) (orient -> i2) = case overlap i1 i2 of
+hausdorff (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
   Before -> case (upper i1, lower i2) of
     ((Merid u1, _), (Merid l2, _)) -> Just (l2 - u1)
     _ -> Nothing

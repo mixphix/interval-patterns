@@ -13,12 +13,12 @@ extra-source-files:
 
 common timeframes
   build-depends:
-    base >= 4.11 && < 5
-    , containers
-    , multiset
-    , relude >= 1.0.0.1 && < 1.1
-    , time
-    , time-compat >= 1.9.6.1 && < 1.10
+    base >= 4.11 && < 5,
+    containers,
+    multiset,
+    relude >= 1.0.0.1 && < 1.1,
+    time,
+    time-compat >= 1.9.6.1 && < 1.10,
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -69,7 +69,7 @@ library
   exposed-modules:
     Data.Suspension
     Data.Interval
-    Data.Interval.Overlap
+    Data.Interval.Adjacency
     Data.Interval.Set
     Data.Timeframe
     Data.OneOrTwo
