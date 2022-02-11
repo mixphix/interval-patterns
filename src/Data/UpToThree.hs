@@ -10,9 +10,9 @@ import Data.Data (Data)
 --
 -- Use 'upToThree' to deconstruct.
 data UpToThree x
-  = Single !x
-  | Double !x !x
-  | Triple !x !x !x
+  = Uno !x
+  | Dos !x !x
+  | Tre !x !x !x
   deriving
     ( Eq,
       Ord,
@@ -29,7 +29,7 @@ data UpToThree x
 -- | Apply an 'upToThree'-argument function appropriately.
 upToThree :: (x -> a) -> (x -> x -> a) -> (x -> x -> x -> a) -> UpToThree x -> a
 upToThree f g h = \case
-  Single x -> f x
-  Double x y -> g x y
-  Triple x y z -> h x y z
+  Uno x -> f x
+  Dos x y -> g x y
+  Tre x y z -> h x y z
 {-# INLINE upToThree #-}

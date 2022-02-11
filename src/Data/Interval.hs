@@ -575,43 +575,43 @@ adjacency (orient -> i1) (orient -> i2) =
 --      in the side of the two where the endpoint matches.
 split :: (Ord x) => Interval x -> Interval x -> UpToThree (Interval x)
 split (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
-  Before -> Double i1 i2
+  Before -> Dos i1 i2
   Meets ->
-    Triple
+    Tre
       (openUpper i1)
       (withBounds lb2 ub1)
       (openLower i2)
   Overlaps ->
-    Triple
+    Tre
       (withBounds lb1 (oppose lb2))
       (withBounds lb2 ub1)
       (withBounds (oppose ub1) ub2)
-  Starts -> Double i1 (withBounds (oppose ub1) ub2)
+  Starts -> Dos i1 (withBounds (oppose ub1) ub2)
   During ->
-    Triple
+    Tre
       (withBounds lb2 (oppose lb1))
       (withBounds lb1 ub1)
       (withBounds (oppose ub1) ub2)
-  Finishes -> Double (withBounds lb1 (oppose lb2)) i2
-  Identical -> Single i1
-  FinishedBy -> Double (withBounds lb2 (oppose lb1)) i1
+  Finishes -> Dos (withBounds lb1 (oppose lb2)) i2
+  Identical -> Uno i1
+  FinishedBy -> Dos (withBounds lb2 (oppose lb1)) i1
   Contains ->
-    Triple
+    Tre
       (withBounds lb1 (oppose lb2))
       (withBounds lb2 ub2)
       (withBounds (oppose ub2) ub1)
-  StartedBy -> Double i2 (withBounds (oppose ub2) ub1)
+  StartedBy -> Dos i2 (withBounds (oppose ub2) ub1)
   OverlappedBy ->
-    Triple
+    Tre
       (withBounds lb2 (oppose lb1))
       (withBounds lb1 ub2)
       (withBounds (oppose ub2) ub1)
   MetBy ->
-    Triple
+    Tre
       (openUpper i2)
       (withBounds lb1 ub2)
       (openLower i1)
-  After -> Double i2 i1
+  After -> Dos i2 i1
   where
     (lb1, ub1) = bounds i1
     (lb2, ub2) = bounds i2
