@@ -74,3 +74,13 @@ library
     Data.Timeframe
     Data.OneOrTwo
     Data.UpToThree
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  import: timeframes
+  hs-source-dirs: tests
+  main-is: Main.hs
+  build-depends:
+    base,
+    timeframes,
+    relude

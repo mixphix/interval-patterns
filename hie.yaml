@@ -2,3 +2,6 @@ cradle:
   cabal:
     - path: "src"
       component: "lib:timeframes"
+
+    - path: "tests"
+      component: "timeframes:test:tests"
