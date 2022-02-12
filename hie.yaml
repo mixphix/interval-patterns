@@ -1,7 +1,7 @@
 cradle:
   cabal:
     - path: "src"
-      component: "lib:timeframes"
+      component: "lib:interval-patterns"
 
     - path: "tests"
-      component: "timeframes:test:tests"
+      component: "interval-patterns:test:tests"

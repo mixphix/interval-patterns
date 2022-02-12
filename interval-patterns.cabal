@@ -1,17 +1,17 @@
 cabal-version: 3.6
-name: timeframes
-version: 0.0.3.0
+name: interval-patterns
+version: 0.0.4.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
 copyright: 2021 Melanie Brown
 license: BSD-3-Clause
 license-file: LICENSE
-homepage: https://github.com/cigsender/timeframes
-bug-reports: https://github.com/cigsender/timeframes/issues
+homepage: https://github.com/cigsender/interval-patterns
+bug-reports: https://github.com/cigsender/interval-patterns/issues
 extra-source-files:
   CHANGELOG.md
 
-common timeframes
+common interval-patterns
   build-depends:
     base >= 4.11 && < 5,
     containers,
@@ -66,7 +66,7 @@ common timeframes
     , relude
 
 library
-  import: timeframes
+  import: interval-patterns
   hs-source-dirs: src
   exposed-modules:
     Data.Suspension
@@ -79,10 +79,10 @@ library
 
 test-suite tests
   type: exitcode-stdio-1.0
-  import: timeframes
+  import: interval-patterns
   hs-source-dirs: tests
   main-is: Main.hs
   build-depends:
     base,
-    timeframes,
+    interval-patterns,
     relude

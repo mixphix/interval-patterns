@@ -1,7 +1,6 @@
-# timeframes
+# interval-patterns
 
-This library is called `timeframes`, but provides types and functions
-for working with intervals of any underlying type, and their monoid under union.
+Intervals of ordered types, and their monoid under union.
 
 * `Data.Suspension` provides the two-point extension of a type,
   used for marking the endpoints of intervals.

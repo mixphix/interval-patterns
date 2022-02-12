@@ -1,3 +1,9 @@
+# Revision history for interval-patterns
+
+## 0.0.4.0 -- 2022-02-12
+
+* Rename project
+
 # Revision history for timeframes
 
 ## 0.0.3.0 -- 2022-02-12
