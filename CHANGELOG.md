@@ -1,5 +1,15 @@
 # Revision history for timeframes
 
+## 0.0.2.0 -- 2022-02-12
+
+Drop `UpToThree` in favour of a more dependently-typed model of adjacency.
+
+* `Overlap` is changed to `Adjacency` where it occurs
+* `split` now returns `SomeAdjacency`, which can be pattern-matched to yield
+  the exact (one, two, or three) intervals into which the two have been cleaved
+* `Interval` moved into `Data.Interval.Types` to avoid a cyclic dependency
+  between `Data.Interval` and `Data.Interval.Adjacency`
+
 ## 0.0.1.0 -- 2022-02-08
 
 Types and functions for working with intervals and their monoid under union.

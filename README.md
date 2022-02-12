@@ -7,7 +7,7 @@ for working with intervals of any underlying type, and their monoid under union.
   used for marking the endpoints of intervals.
 * `Data.Interval` defines the `Interval` type, along with type- and value-level
   structures for working with closed and open endpoints.
-* `overlap` calculates the relationship between intervals
+* `adjacency` calculates the relationship between intervals
   according to Allen`s interval algebra.
 * `split` separates two intervals into one, two, or three parts,
-  depending on their overlap.
+  depending on their adjacency.

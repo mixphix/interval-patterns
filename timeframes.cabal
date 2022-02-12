@@ -1,6 +1,6 @@
 cabal-version: 3.6
 name: timeframes
-version: 0.0.1.0
+version: 0.0.2.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
 copyright: 2021 Melanie Brown
@@ -71,11 +71,11 @@ library
   exposed-modules:
     Data.Suspension
     Data.Interval
+    Data.Interval.Types
     Data.Interval.Adjacency
     Data.Interval.Set
     Data.Timeframe
     Data.OneOrTwo
-    Data.UpToThree
 
 test-suite tests
   type: exitcode-stdio-1.0
