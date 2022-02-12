@@ -1,3 +1,5 @@
+{-# LANGUAGE MagicHash #-}
+
 -- |
 -- Module       : Data.Interval
 -- Copyright    : (c) Melanie Brown 2022
@@ -40,19 +42,28 @@ module Data.Interval
   )
 where
 
+import Control.Exception.Base (typeError)
 import Data.Interval.Adjacency
 import Data.Interval.Types
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Suspension (Suspension (..))
 
 -- | Get the convex hull of two intervals.
+--
+-- >>> hull (3 :||: 4) (7 :|>: 8)
+-- (Merid 3 :|->: Merid 8)
+--
+-- >>> hull (Nadir :<|: 3) (3 :<|: 4)
+-- (Merid Nadir :<-|: Merid (Merid 4))
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
 hull (orient -> i1) (orient -> i2) =
-  case (on min lower i1 i2, on max upper i1 i2) of
-    ((l, Infimum), (u, Supremum)) -> l :<->: u
-    ((l, Infimum), (u, _)) -> l :<-|: u
-    ((l, _), (u, Supremum)) -> l :|->: u
-    ((l, _), (u, _)) -> l :|-|: u
+  let [il, iu] = sort [i1, i2]
+   in case (lowerBound il, upperBound iu) of
+        (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
+        (SomeBound l@(Inf _), SomeBound u@(Max _)) -> l :<--|: u
+        (SomeBound l@(Min _), SomeBound u@(Sup _)) -> l :|-->: u
+        (SomeBound l@(Min _), SomeBound u@(Max _)) -> l :|--|: u
+        _ -> typeError "Invalid lower/upper bounds"#
 
 -- | Get the convex hull of a non-empty list of intervals.
 hulls :: (Ord x) => NonEmpty (Interval x) -> Interval x
@@ -315,39 +326,26 @@ split (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
 --
 -- @
 intersect ::
+  forall x.
   (Ord x) =>
   Interval x ->
   Interval x ->
   Maybe (Interval x)
-intersect (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
-  Before -> Nothing
-  Meets -> Just (u1 :|-|: u1)
-  Overlaps -> Just j1
-  Starts -> Just j1
-  During -> Just i1
-  Finishes -> Just j1
-  Identical -> Just i1
-  FinishedBy -> Just j2
-  Contains -> Just i2
-  StartedBy -> Just j2
-  OverlappedBy -> Just j2
-  MetBy -> Just (l1 :|-|: l1)
-  After -> Nothing
-  where
-    (l1, lb1) = lower i1
-    (l2, lb2) = lower i2
-    (u1, ub1) = upper i1
-    (u2, ub2) = upper i2
-    j1 = case (lb2, ub1) of
-      (Infimum, Supremum) -> l2 :<->: u1
-      (Infimum, Maximum) -> l2 :<-|: u1
-      (Minimum, Supremum) -> l2 :|->: u1
-      _ -> l2 :|-|: u1
-    j2 = case (lb1, ub2) of
-      (Infimum, Supremum) -> l1 :<->: u2
-      (Infimum, Maximum) -> l1 :<-|: u2
-      (Minimum, Supremum) -> l1 :|->: u2
-      _ -> l1 :|-|: u2
+intersect (orient -> i1) (orient -> i2) = case split i1 i2 of
+  SomeAdjacency (adj :: Adjacent adj x) -> case adj of
+    BeforeJ _ _ -> Nothing
+    MeetsJ _ j _ -> Just j
+    OverlapsJ _ j _ -> Just j
+    StartsJ i _ -> Just i
+    DuringJ _ j _ -> Just j
+    FinishesJ _ j -> Just j
+    IdenticalJ i -> Just i
+    FinishedByJ _ j -> Just j
+    ContainsJ _ j _ -> Just j
+    StartedByJ i _ -> Just i
+    OverlappedByJ _ j _ -> Just j
+    MetByJ _ j _ -> Just j
+    AfterJ _ _ -> Nothing
 
 -- | Get the union of two intervals, as either 'OneOrTwo'.
 --
@@ -361,27 +359,34 @@ intersect (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
 --
 -- @
 union ::
+  forall x.
   (Ord x) =>
   Interval x ->
   Interval x ->
   OneOrTwo (Interval x)
-union (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
-  Before
-    | u1 == l2 -> case (ub1, lb2) of
-      (Supremum, Infimum) -> Two i1 i2
-      _ -> One (hull i1 i2)
-    | otherwise -> Two i1 i2
-  After
-    | u2 == l1 -> case (ub2, lb1) of
-      (Supremum, Infimum) -> Two i2 i1
-      _ -> One (hull i1 i2)
-    | otherwise -> Two i2 i1
-  _ -> One (hull i1 i2)
+union (orient -> i1) (orient -> i2) = case split i1 i2 of
+  SomeAdjacency (adj :: Adjacent adj x) -> case adj of
+    BeforeJ i j -> Two i j
+    MeetsJ i _ k -> One $ combo i k
+    OverlapsJ i _ k -> One $ combo i k
+    StartsJ i j -> One $ combo i j
+    DuringJ i _ k -> One $ combo i k
+    FinishesJ i j -> One $ combo i j
+    IdenticalJ i -> One i
+    FinishedByJ i j -> One $ combo i j
+    ContainsJ i _ k -> One $ combo i k
+    StartedByJ i j -> One $ combo i j
+    OverlappedByJ i _ k -> One $ combo i k
+    MetByJ i _ k -> One $ combo i k
+    AfterJ i j -> Two i j
   where
-    (l1, lb1) = lower i1
-    (l2, lb2) = lower i2
-    (u1, ub1) = upper i1
-    (u2, ub2) = upper i2
+    combo :: Interval x -> Interval x -> Interval x
+    combo i k = case (lowerBound i, upperBound k) of
+      (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
+      (SomeBound l@(Inf _), SomeBound u@(Max _)) -> l :<--|: u
+      (SomeBound l@(Min _), SomeBound u@(Sup _)) -> l :|-->: u
+      (SomeBound l@(Min _), SomeBound u@(Max _)) -> l :|--|: u
+      _ -> typeError "Invalid lower/upper bounds"#
 
 -- | Get the union of a list of intervals.
 unions :: (Ord x) => [Interval x] -> [Interval x]
