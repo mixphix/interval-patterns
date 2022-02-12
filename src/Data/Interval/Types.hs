@@ -319,14 +319,24 @@ instance (Eq x) => Eq (Interval x) where
   l1 :|-|: u1 == l2 :|-|: u2 = l1 == l2 && u1 == u2
   _ == _ = False
 
--- | Order properly the endpoints of an interval.
-orient :: (Ord x) => Interval x -> Interval x
+-- | Flip an 'Interval' to the direction of the canonical ordering.
+--
+-- @
+--
+-- >>> orient (Merid 6 :|->: Nadir)
+-- (Nadir :<-|: Merid 6)
+--
+-- >>> orient (5 :<|: 4)
+-- (Merid 4 :|->: Merid 5)
+--
+-- @
+orient :: forall x. (Ord x) => Interval x -> Interval x
 orient = \case
   l :<->: u
     | l == u -> l :|-|: u
     | otherwise -> min l u :<->: max l u
-  l :<-|: u -> min l u :<-|: max l u
-  l :|->: u -> min l u :|->: max l u
+  l :<-|: u -> min l u :|->: max l u
+  l :|->: u -> min l u :<-|: max l u
   l :|-|: u -> min l u :|-|: max l u
 
 data SomeBound x
