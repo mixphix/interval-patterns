@@ -20,8 +20,8 @@ module Data.Interval.Set
   )
 where
 
-import Data.Interval (Interval)
 import Data.Interval qualified as I
+import Data.Interval.Types (Interval)
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Set qualified as Set
 
@@ -37,7 +37,7 @@ newtype IntervalSet x = IntervalSet (Set (Interval x))
 
 -- | Turn an 'IntervalSet' into a 'Set.Set' of 'Interval's.
 intervalSet :: (Ord x) => IntervalSet x -> Set (Interval x)
-intervalSet (IntervalSet is) = Set.map I.orient (unionsSet is)
+intervalSet (IntervalSet is) = unionsSet is
 
 unionsSet :: (Ord x) => Set (Interval x) -> Set (Interval x)
 unionsSet = Set.fromList . I.unions . Set.toList
@@ -48,7 +48,7 @@ empty = IntervalSet Set.empty
 
 -- | The 'IntervalSet' consisting of a single 'Interval'.
 singleton :: (Ord x) => Interval x -> IntervalSet x
-singleton x = IntervalSet (Set.singleton (I.orient x))
+singleton x = IntervalSet (Set.singleton x)
 
 -- | Is this 'IntervalSet' empty?
 null :: IntervalSet x -> Bool
@@ -63,7 +63,7 @@ insert :: (Ord x) => Interval x -> IntervalSet x -> IntervalSet x
 insert i (IntervalSet is) = IntervalSet (unionsSet (Set.insert i is))
 
 -- | The 'IntervalSet' that covers the entire range.
-whole :: IntervalSet x
+whole :: (Ord x) => IntervalSet x
 whole = IntervalSet (one I.Whole)
 
 instance (Ord x) => Semigroup (IntervalSet x) where

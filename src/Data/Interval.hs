@@ -9,6 +9,7 @@
 module Data.Interval
   ( module Data.Interval.Adjacency,
     module Data.Interval.Types,
+    withBounds,
     imin,
     iinf,
     isup,
@@ -48,6 +49,22 @@ import Data.Interval.Types
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Suspension (Suspension (..))
 
+withBounds ::
+  (Ord x) =>
+  SomeBound (Suspension x) ->
+  SomeBound (Suspension x) ->
+  Interval x
+withBounds (SomeBound b1) (SomeBound b2) = case (b1, b2) of
+  (Min l, Max u) -> l :|-|: u
+  (Inf l, Max u) -> l :<-|: u
+  (Min l, Sup u) -> l :|->: u
+  (Inf l, Sup u) -> l :<->: u
+  (Max u, Min l) -> l :|-|: u
+  (Max u, Inf l) -> l :<-|: u
+  (Sup u, Min l) -> l :|->: u
+  (Sup u, Inf l) -> l :<->: u
+  _ -> typeError "cannot make an interval with the given bounds"#
+
 -- | Get the convex hull of two intervals.
 --
 -- >>> hull (3 :||: 4) (7 :|>: 8)
@@ -56,7 +73,7 @@ import Data.Suspension (Suspension (..))
 -- >>> hull (Nadir :<|: 3) (3 :<|: 4)
 -- (Merid Nadir :<-|: Merid (Merid 4))
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
-hull (orient -> i1) (orient -> i2) =
+hull i1 i2 =
   let [il, iu] = sort [i1, i2]
    in case (lowerBound il, upperBound iu) of
         (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
@@ -72,145 +89,130 @@ hulls (i :| j : is) = hulls $ hull i j :| is
 
 -- | Test whether a point is contained in the interval.
 within :: (Ord x) => x -> Interval x -> Bool
-within (Merid -> x) =
-  orient >>> \case
-    l :<->: u -> l < x && x < u
-    l :<-|: u -> l < x && x <= u
-    l :|->: u -> l <= x && x < u
-    l :|-|: u -> l <= x && x <= u
+within (Merid -> x) = \case
+  l :<->: u -> l < x && x < u
+  l :<-|: u -> l < x && x <= u
+  l :|->: u -> l <= x && x < u
+  l :|-|: u -> l <= x && x <= u
 
 -- | Create the closed-closed interval at a given point.
-point :: x -> Interval x
+point :: (Ord x) => x -> Interval x
 point = join (:||:)
 
 -- | Get the minimum of an interval, if it exists.
 imin :: (Ord x) => Interval x -> Maybe (Bound Minimum (Suspension x))
-imin =
-  orient >>> \case
-    (_ :<-->: _) -> Nothing
-    (_ :<--|: _) -> Nothing
-    (x :|-->: _) -> Just x
-    (x :|--|: _) -> Just x
+imin = \case
+  (_ :<-->: _) -> Nothing
+  (_ :<--|: _) -> Nothing
+  (x :|-->: _) -> Just x
+  (x :|--|: _) -> Just x
 
 -- | Get the infimum of an interval, weakening if necessary.
 iinf :: (Ord x) => Interval x -> Bound Infimum (Suspension x)
-iinf =
-  orient >>> \case
-    (x :<->: _) -> Inf x
-    (x :<-|: _) -> Inf x
-    (x :|->: _) -> Inf x
-    (x :|-|: _) -> Inf x
+iinf = \case
+  (x :<->: _) -> Inf x
+  (x :<-|: _) -> Inf x
+  (x :|->: _) -> Inf x
+  (x :|-|: _) -> Inf x
 
 -- | Get the supremum of an interval, weakening if necessary.
 isup :: (Ord x) => Interval x -> Bound Supremum (Suspension x)
-isup =
-  orient >>> \case
-    (_ :<->: x) -> Sup x
-    (_ :<-|: x) -> Sup x
-    (_ :|->: x) -> Sup x
-    (_ :|-|: x) -> Sup x
+isup = \case
+  (_ :<->: x) -> Sup x
+  (_ :<-|: x) -> Sup x
+  (_ :|->: x) -> Sup x
+  (_ :|-|: x) -> Sup x
 
 -- | Get the maximum of an interval if it exists.
 imax :: (Ord x) => Interval x -> Maybe (Bound Maximum (Suspension x))
-imax =
-  orient >>> \case
-    (_ :<-->: _) -> Nothing
-    (_ :<--|: x) -> Just x
-    (_ :|-->: _) -> Nothing
-    (_ :|--|: x) -> Just x
+imax = \case
+  (_ :<-->: _) -> Nothing
+  (_ :<--|: x) -> Just x
+  (_ :|-->: _) -> Nothing
+  (_ :|--|: x) -> Just x
 
 -- | Open both bounds of the given interval.
 open :: (Ord x) => Interval x -> Interval x
-open =
-  orient >>> \case
-    l :<->: u -> l :<->: u
-    l :<-|: u -> l :<->: u
-    l :|->: u -> l :<->: u
-    l :|-|: u -> l :<->: u
+open = \case
+  l :<->: u -> l :<->: u
+  l :<-|: u -> l :<->: u
+  l :|->: u -> l :<->: u
+  l :|-|: u -> l :<->: u
 
 -- | Close both bounds of the given interval.
 close :: (Ord x) => Interval x -> Interval x
-close =
-  orient >>> \case
-    l :<->: u -> l :|-|: u
-    l :<-|: u -> l :|-|: u
-    l :|->: u -> l :|-|: u
-    l :|-|: u -> l :|-|: u
+close = \case
+  l :<->: u -> l :|-|: u
+  l :<-|: u -> l :|-|: u
+  l :|->: u -> l :|-|: u
+  l :|-|: u -> l :|-|: u
 
 -- | Make the interval open-closed, leaving the endpoints unchanged.
 openclosed :: (Ord x) => Interval x -> Interval x
-openclosed =
-  orient >>> \case
-    l :<->: u -> l :<->: u
-    l :<-|: u -> l :<->: u
-    l :|->: u -> l :<->: u
-    l :|-|: u -> l :<->: u
+openclosed = \case
+  l :<->: u -> l :<->: u
+  l :<-|: u -> l :<->: u
+  l :|->: u -> l :<->: u
+  l :|-|: u -> l :<->: u
 
 -- | Make the interval closed-open, leaving the endpoints unchanged.
 closedopen :: (Ord x) => Interval x -> Interval x
-closedopen =
-  orient >>> \case
-    l :<->: u -> l :|-|: u
-    l :<-|: u -> l :|-|: u
-    l :|->: u -> l :|-|: u
-    l :|-|: u -> l :|-|: u
+closedopen = \case
+  l :<->: u -> l :|-|: u
+  l :<-|: u -> l :|-|: u
+  l :|->: u -> l :|-|: u
+  l :|-|: u -> l :|-|: u
 
 -- | Make the lower bound open, leaving the endpoints unchanged.
 openLower :: (Ord x) => Interval x -> Interval x
-openLower =
-  orient >>> \case
-    l :<->: u -> l :<->: u
-    l :<-|: u -> l :<-|: u
-    l :|->: u -> l :<->: u
-    l :|-|: u -> l :<-|: u
+openLower = \case
+  l :<->: u -> l :<->: u
+  l :<-|: u -> l :<-|: u
+  l :|->: u -> l :<->: u
+  l :|-|: u -> l :<-|: u
 
 -- | Make the lower bound closed, leaving the endpoints unchanged.
 closedLower :: (Ord x) => Interval x -> Interval x
-closedLower =
-  orient >>> \case
-    l :<->: u -> l :|->: u
-    l :<-|: u -> l :|-|: u
-    l :|->: u -> l :|->: u
-    l :|-|: u -> l :|-|: u
+closedLower = \case
+  l :<->: u -> l :|->: u
+  l :<-|: u -> l :|-|: u
+  l :|->: u -> l :|->: u
+  l :|-|: u -> l :|-|: u
 
 -- | Make the upper bound open, leaving the endpoints unchanged.
 openUpper :: (Ord x) => Interval x -> Interval x
-openUpper =
-  orient >>> \case
-    l :<->: u -> l :<->: u
-    l :<-|: u -> l :<->: u
-    l :|->: u -> l :|->: u
-    l :|-|: u -> l :|->: u
+openUpper = \case
+  l :<->: u -> l :<->: u
+  l :<-|: u -> l :<->: u
+  l :|->: u -> l :|->: u
+  l :|-|: u -> l :|->: u
 
 -- | Make the upper bound closed, leaving the endpoints unchanged.
 closedUpper :: (Ord x) => Interval x -> Interval x
-closedUpper =
-  orient >>> \case
-    l :<->: u -> l :<-|: u
-    l :<-|: u -> l :<-|: u
-    l :|->: u -> l :|-|: u
-    l :|-|: u -> l :|-|: u
+closedUpper = \case
+  l :<->: u -> l :<-|: u
+  l :<-|: u -> l :<-|: u
+  l :|->: u -> l :|-|: u
+  l :|-|: u -> l :|-|: u
 
 setLower :: (Ord x) => Suspension x -> Interval x -> Interval x
-setLower x =
-  orient >>> \case
-    _ :<->: u -> x :<->: u
-    _ :<-|: u -> x :<-|: u
-    _ :|->: u -> x :|->: u
-    _ :|-|: u -> x :|-|: u
+setLower x = \case
+  _ :<->: u -> x :<->: u
+  _ :<-|: u -> x :<-|: u
+  _ :|->: u -> x :|->: u
+  _ :|-|: u -> x :|-|: u
 
 setUpper :: (Ord x) => Suspension x -> Interval x -> Interval x
-setUpper x =
-  orient >>> \case
-    l :<->: _ -> l :<->: x
-    l :<-|: _ -> l :<-|: x
-    l :|->: _ -> l :|->: x
-    l :|-|: _ -> l :|-|: x
+setUpper x = \case
+  l :<->: _ -> l :<->: x
+  l :<-|: _ -> l :<-|: x
+  l :|->: _ -> l :|->: x
+  l :|-|: _ -> l :|-|: x
 
 -- | Calculate the adjacency relationship between two intervals, according to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
 adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency
-adjacency (orient -> i1) (orient -> i2) =
+adjacency i1 i2 =
   case (on compare lower i1 i2, on compare upper i1 i2) of
     (LT, LT) -> case u1 `compare` l2 of
       LT -> Before
@@ -247,7 +249,7 @@ adjacency (orient -> i1) (orient -> i2) =
 --    - and they share an endpoint, the intersection is returned
 --      in the side of the two where the endpoint matches.
 split :: (Ord x) => Interval x -> Interval x -> SomeAdjacency x
-split (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
+split i1 i2 = case adjacency i1 i2 of
   Before -> SomeAdjacency $ BeforeJ i1 i2
   Meets ->
     SomeAdjacency $
@@ -331,7 +333,7 @@ intersect ::
   Interval x ->
   Interval x ->
   Maybe (Interval x)
-intersect (orient -> i1) (orient -> i2) = case split i1 i2 of
+intersect i1 i2 = case split i1 i2 of
   SomeAdjacency (adj :: Adjacent adj x) -> case adj of
     BeforeJ _ _ -> Nothing
     MeetsJ _ j _ -> Just j
@@ -364,32 +366,28 @@ union ::
   Interval x ->
   Interval x ->
   OneOrTwo (Interval x)
-union (orient -> i1) (orient -> i2) = case split i1 i2 of
+union i1 i2 = case split i1 i2 of
   SomeAdjacency (adj :: Adjacent adj x) -> case adj of
-    BeforeJ i j -> Two i j
-    MeetsJ i _ k -> One $ combo i k
-    OverlapsJ i _ k -> One $ combo i k
-    StartsJ i j -> One $ combo i j
-    DuringJ i _ k -> One $ combo i k
-    FinishesJ i j -> One $ combo i j
+    BeforeJ i j
+      | fst (upper i) == fst (lower j) -> One $ hull i j
+      | otherwise -> Two i j
+    MeetsJ i j k -> One $ hulls (k :| [hull i j])
+    OverlapsJ i j k -> One $ hulls (i :| [j, k])
+    StartsJ i j -> One $ hulls (i :| [j])
+    DuringJ i j k -> One $ hulls (i :| [j, k])
+    FinishesJ i j -> One $ hulls (i :| [j])
     IdenticalJ i -> One i
-    FinishedByJ i j -> One $ combo i j
-    ContainsJ i _ k -> One $ combo i k
-    StartedByJ i j -> One $ combo i j
-    OverlappedByJ i _ k -> One $ combo i k
-    MetByJ i _ k -> One $ combo i k
-    AfterJ i j -> Two i j
-  where
-    combo :: Interval x -> Interval x -> Interval x
-    combo i k = case (lowerBound i, upperBound k) of
-      (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
-      (SomeBound l@(Inf _), SomeBound u@(Max _)) -> l :<--|: u
-      (SomeBound l@(Min _), SomeBound u@(Sup _)) -> l :|-->: u
-      (SomeBound l@(Min _), SomeBound u@(Max _)) -> l :|--|: u
-      _ -> typeError "Invalid lower/upper bounds"#
+    FinishedByJ i j -> One $ hulls (i :| [j])
+    ContainsJ i j k -> One $ hulls (i :| [j, k])
+    StartedByJ i j -> One $ hulls (i :| [j])
+    OverlappedByJ i j k -> One $ hulls (i :| [j, k])
+    MetByJ i j k -> One $ hulls (k :| [hull i j])
+    AfterJ i j
+      | fst (upper i) == fst (lower j) -> One $ hull i j
+      | otherwise -> Two i j
 
 -- | Get the union of a list of intervals.
-unions :: (Ord x) => [Interval x] -> [Interval x]
+unions :: forall x. (Ord x) => [Interval x] -> [Interval x]
 unions = foldr f []
   where
     f i [] = [i]
@@ -405,24 +403,23 @@ unions = foldr f []
 -- Just (Two (Nadir :|-|: Merid 3) (Merid 4 :|-|: Zenit))
 --
 -- @
-complement :: (Ord x) => Interval x -> Maybe (OneOrTwo (Interval x))
-complement =
-  orient >>> \case
-    Whole -> Nothing
-    Nadir :|-|: u -> Just (One (u :<-|: Zenit))
-    Nadir :|->: u -> Just (One (u :|-|: Zenit))
-    Nadir :<-|: u -> Just (Two (Nadir :|-|: Nadir) (u :<-|: Zenit))
-    Nadir :<->: u -> Just (Two (Nadir :|-|: Nadir) (u :|-|: Zenit))
-    --
-    l :|-|: Zenit -> Just (One (Nadir :|->: l))
-    l :<-|: Zenit -> Just (One (Nadir :|-|: l))
-    l :|->: Zenit -> Just (Two (Nadir :|->: l) (Zenit :|-|: Zenit))
-    l :<->: Zenit -> Just (Two (Nadir :|-|: l) (Zenit :|-|: Zenit))
-    --
-    l :|-|: u -> Just (Two (Nadir :|->: l) (u :<-|: Zenit))
-    l :|->: u -> Just (Two (Nadir :|->: l) (u :|-|: Zenit))
-    l :<-|: u -> Just (Two (Nadir :|-|: l) (u :<-|: Zenit))
-    l :<->: u -> Just (Two (Nadir :|-|: l) (u :|-|: Zenit))
+complement :: forall x. (Ord x) => Interval x -> Maybe (OneOrTwo (Interval x))
+complement = \case
+  Whole -> Nothing
+  Nadir :|-|: u -> Just (One (u :<-|: Zenit))
+  Nadir :|->: u -> Just (One (u :|-|: Zenit))
+  Nadir :<-|: u -> Just (Two (Nadir :|-|: Nadir) (u :<-|: Zenit))
+  Nadir :<->: u -> Just (Two (Nadir :|-|: Nadir) (u :|-|: Zenit))
+  --
+  l :|-|: Zenit -> Just (One (Nadir :|->: l))
+  l :<-|: Zenit -> Just (One (Nadir :|-|: l))
+  l :|->: Zenit -> Just (Two (Nadir :|->: l) (Zenit :|-|: Zenit))
+  l :<->: Zenit -> Just (Two (Nadir :|-|: l) (Zenit :|-|: Zenit))
+  --
+  l :|-|: u -> Just (Two (Nadir :|->: l) (u :<-|: Zenit))
+  l :|->: u -> Just (Two (Nadir :|->: l) (u :|-|: Zenit))
+  l :<-|: u -> Just (Two (Nadir :|-|: l) (u :<-|: Zenit))
+  l :<->: u -> Just (Two (Nadir :|-|: l) (u :|-|: Zenit))
 
 -- | Remove all points of the second interval from the first.
 --
@@ -436,43 +433,27 @@ complement =
 --
 -- @
 difference ::
+  forall x.
   (Ord x) =>
   Interval x ->
   Interval x ->
   Maybe (OneOrTwo (Interval x))
-difference (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
-  Before -> Just (One i1)
-  Meets -> Just . One $ case lb1 of
-    Infimum -> l1 :<->: u1
-    _ -> l1 :|->: u1
-  Overlaps -> Just (One j1)
-  Starts -> Nothing
-  During -> Nothing
-  Finishes -> Nothing
-  Identical -> Nothing
-  FinishedBy -> Just (One j1)
-  Contains -> Just (Two j1 j2)
-  StartedBy -> Just (One j2)
-  OverlappedBy -> Just (One j2)
-  MetBy -> Just . One $ case ub1 of
-    Supremum -> l1 :<->: u1
-    _ -> l1 :<-|: u1
-  After -> Just (One i1)
-  where
-    (l1, lb1) = lower i1
-    (l2, lb2) = lower i2
-    (u1, ub1) = upper i1
-    (u2, ub2) = upper i2
-    j1 = case (lb1, lb2) of
-      (Infimum, Infimum) -> l1 :<-|: l2
-      (Infimum, _) -> l1 :<->: l2
-      (_, Infimum) -> l1 :|-|: l2
-      _ -> l1 :|->: l2
-    j2 = case (ub2, ub1) of
-      (Maximum, Maximum) -> u2 :<-|: u1
-      (Maximum, _) -> u2 :<->: u1
-      (_, Maximum) -> u2 :|-|: u1
-      _ -> u2 :|->: u1
+difference i1 i2 = case split i1 i2 of
+  SomeAdjacency (adj :: Adjacent adj x) -> case adj of
+    -- not commutative!!
+    BeforeJ i _ -> Just $ One i
+    MeetsJ i _ _ -> Just $ One i
+    OverlapsJ i _ _ -> Just $ One i
+    StartsJ {} -> Nothing
+    DuringJ {} -> Nothing
+    FinishesJ {} -> Nothing
+    IdenticalJ {} -> Nothing
+    FinishedByJ i _ -> Just $ One i
+    ContainsJ i _ k -> Just $ Two i k
+    StartedByJ _ j -> Just $ One j
+    OverlappedByJ _ _ k -> Just $ One k
+    MetByJ i _ _ -> Just $ One i
+    AfterJ i _ -> Just $ One i
 
 -- | The difference of the union and intersection of two intervals.
 --
@@ -486,11 +467,12 @@ difference (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
 --
 -- @
 symmetricDifference ::
+  forall x.
   (Ord x) =>
   Interval x ->
   Interval x ->
   Maybe (OneOrTwo (Interval x))
-symmetricDifference (orient -> i1) (orient -> i2) = case i1 `union` i2 of
+symmetricDifference i1 i2 = case i1 `union` i2 of
   Two j1 j2 -> Just (Two j1 j2)
   One u -> case i1 `intersect` i2 of
     Nothing -> Just (One u)
@@ -507,7 +489,7 @@ symmetricDifference (orient -> i1) (orient -> i2) = case i1 `union` i2 of
 -- Nothing
 --
 -- @
-measure :: (Ord x, Num x) => Interval x -> Maybe x
+measure :: forall x. (Ord x, Num x) => Interval x -> Maybe x
 measure = measuring subtract
 
 -- | Apply a function to the lower, then upper, endpoint of an interval.
@@ -521,17 +503,17 @@ measure = measuring subtract
 -- Just (-1)
 --
 -- @
-measuring :: (Ord x, Num y) => (x -> x -> y) -> Interval x -> Maybe y
-measuring f =
-  orient >>> \case
-    Merid l :|-|: Merid u -> Just (f l u)
-    Merid l :|->: Merid u -> Just (f l u)
-    Merid l :<-|: Merid u -> Just (f l u)
-    Merid l :<->: Merid u -> Just (f l u)
-    l :|-|: u -> if l == u then Just 0 else Nothing
-    l :|->: u -> if l == u then Just 0 else Nothing
-    l :<-|: u -> if l == u then Just 0 else Nothing
-    l :<->: u -> if l == u then Just 0 else Nothing
+measuring ::
+  forall y x. (Ord x, Num y) => (x -> x -> y) -> Interval x -> Maybe y
+measuring f = \case
+  Merid l :|-|: Merid u -> Just (f l u)
+  Merid l :|->: Merid u -> Just (f l u)
+  Merid l :<-|: Merid u -> Just (f l u)
+  Merid l :<->: Merid u -> Just (f l u)
+  l :|-|: u -> if l == u then Just 0 else Nothing
+  l :|->: u -> if l == u then Just 0 else Nothing
+  l :<-|: u -> if l == u then Just 0 else Nothing
+  l :<->: u -> if l == u then Just 0 else Nothing
 
 -- | Get the distance between two intervals, or 0 if they adjacency.
 --
@@ -545,7 +527,7 @@ measuring f =
 --
 -- @
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
-hausdorff (orient -> i1) (orient -> i2) = case adjacency i1 i2 of
+hausdorff i1 i2 = case adjacency i1 i2 of
   Before -> case (upper i1, lower i2) of
     ((Merid u1, _), (Merid l2, _)) -> Just (l2 - u1)
     _ -> Nothing

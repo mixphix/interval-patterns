@@ -1,9 +1,16 @@
 # Revision history for timeframes
 
+## 0.0.3.0 -- 2022-02-12
+
+* Drop `orient`, putting `Ord` constraints on the constructors of `Interval`
+  and leaving the ordering to the smart constructors
+* Rewrite `intersection`, `union`, and `difference` using `split`
+* Settle on changelog format
+* move `withBounds` to `Data.Interval`
+
 ## 0.0.2.0 -- 2022-02-12
 
-Drop `UpToThree` in favour of a more dependently-typed model of adjacency.
-
+* Drop `UpToThree` in favour of a more dependently-typed model of adjacency
 * `Overlap` is changed to `Adjacency` where it occurs
 * `split` now returns `SomeAdjacency`, which can be pattern-matched to yield
   the exact (one, two, or three) intervals into which the two have been cleaved
