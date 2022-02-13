@@ -93,10 +93,10 @@ opposite = \case
 -- | A 'Bound' is an endpoint of an 'Interval'.
 type Bound :: Extremum -> Type -> Type
 data Bound ext x where
-  Min :: x -> Bound Minimum x
-  Inf :: x -> Bound Infimum x
-  Sup :: x -> Bound Supremum x
-  Max :: x -> Bound Maximum x
+  Min :: !x -> Bound Minimum x
+  Inf :: !x -> Bound Infimum x
+  Sup :: !x -> Bound Supremum x
+  Max :: !x -> Bound Maximum x
 
 -- | Extract the term from a 'Bound'.
 unBound :: Bound ext x -> x
@@ -203,7 +203,7 @@ compareBounds (Max u) = \case
 data SomeBound x
   = forall ext.
     (Bounding ext, Bounding (Opposite ext)) =>
-    SomeBound (Bound ext x)
+    SomeBound !(Bound ext x)
 
 instance (Eq x) => Eq (SomeBound (Suspension x)) where
   SomeBound (Min a) == SomeBound (Min b) = a == b
@@ -234,26 +234,26 @@ data Interval x where
   -- Open-open interval. You probably want '(:<->:)' or '(:<>:)'.
   (:<-->:) ::
     (Ord x) =>
-    Bound Infimum (Suspension x) ->
-    Bound Supremum (Suspension x) ->
+    !(Bound Infimum (Suspension x)) ->
+    !(Bound Supremum (Suspension x)) ->
     Interval x
   -- Open-closed interval. You probably want '(:<-|:)' or '(:<|:)'.
   (:<--|:) ::
     (Ord x) =>
-    Bound Infimum (Suspension x) ->
-    Bound Maximum (Suspension x) ->
+    !(Bound Infimum (Suspension x)) ->
+    !(Bound Maximum (Suspension x)) ->
     Interval x
   -- Closed-open interval. You probably want '(:|->:)' or '(:|>:)'.
   (:|-->:) ::
     (Ord x) =>
-    Bound Minimum (Suspension x) ->
-    Bound Supremum (Suspension x) ->
+    !(Bound Minimum (Suspension x)) ->
+    !(Bound Supremum (Suspension x)) ->
     Interval x
   -- Closed-closed interval. You probably want '(:|-|:)' or '(:||:)'.
   (:|--|:) ::
     (Ord x) =>
-    Bound Minimum (Suspension x) ->
-    Bound Maximum (Suspension x) ->
+    !(Bound Minimum (Suspension x)) ->
+    !(Bound Maximum (Suspension x)) ->
     Interval x
 
 deriving instance (Ord x) => Eq (Interval x)
@@ -414,19 +414,19 @@ interval (SomeBound b1) (SomeBound b2) = case (b1, b2) of
 -- into at most 3 distinct intervals. In this package,
 -- this quality is called the 'Adjacency' of the intervals.
 data Adjacency x
-  = Before (Interval x) (Interval x)
-  | Meets (Interval x) (Interval x) (Interval x)
-  | Overlaps (Interval x) (Interval x) (Interval x)
-  | Starts (Interval x) (Interval x)
-  | During (Interval x) (Interval x) (Interval x)
-  | Finishes (Interval x) (Interval x)
-  | Identical (Interval x)
-  | FinishedBy (Interval x) (Interval x)
-  | Contains (Interval x) (Interval x) (Interval x)
-  | StartedBy (Interval x) (Interval x)
-  | OverlappedBy (Interval x) (Interval x) (Interval x)
-  | MetBy (Interval x) (Interval x) (Interval x)
-  | After (Interval x) (Interval x)
+  = Before !(Interval x) !(Interval x)
+  | Meets !(Interval x) !(Interval x) !(Interval x)
+  | Overlaps !(Interval x) !(Interval x) !(Interval x)
+  | Starts !(Interval x) !(Interval x)
+  | During !(Interval x) !(Interval x) !(Interval x)
+  | Finishes !(Interval x) !(Interval x)
+  | Identical !(Interval x)
+  | FinishedBy !(Interval x) !(Interval x)
+  | Contains !(Interval x) !(Interval x) !(Interval x)
+  | StartedBy !(Interval x) !(Interval x)
+  | OverlappedBy !(Interval x) !(Interval x) !(Interval x)
+  | MetBy !(Interval x) !(Interval x) !(Interval x)
+  | After !(Interval x) !(Interval x)
   deriving (Eq, Ord, Show, Generic, Typeable)
 
 -- | The result of having compared the same two intervals in reverse order.

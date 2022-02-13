@@ -16,7 +16,7 @@ import Data.Data (Data)
 -- of the underlying type is considered as a 'Merid'ian.
 data Suspension a
   = Nadir
-  | Merid a
+  | Merid !a
   | Zenit
   deriving
     ( Eq,
