@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.0.6.1 -- 2022-02-13
+
+* fix `Num` instance for `Suspension`
+
 ## 0.0.6.0 -- 2022-02-13
 
 * remove `AdjacencyRepr` (don't need a type parameter you're just gonna hide)

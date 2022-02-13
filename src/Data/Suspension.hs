@@ -53,7 +53,7 @@ instance (Semigroup x) => Semigroup (Suspension x) where
 instance (Semigroup x) => Monoid (Suspension x) where
   mempty = Nadir
 
-instance Num x => Num (Suspension x) where
+instance (Num x) => Num (Suspension x) where
   Nadir + Zenit = error "tried to perform Nadir + Zenit"
   Nadir + _ = Nadir
   _ + Nadir = Nadir
@@ -79,14 +79,14 @@ instance Num x => Num (Suspension x) where
 
   negate = \case
     Nadir -> Zenit
-    Merid x -> Merid (signum x)
+    Merid x -> Merid (negate x)
     Zenit -> Nadir
 
   fromInteger = Merid . fromInteger
 
 -- |
 -- @
---   'suspension' nadir merid zenit = \\case
+--   suspension nadir merid zenit = \\case
 --     Nadir -> nadir
 --     Merid a -> merid a
 --     Zenit -> zenit
