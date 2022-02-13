@@ -1,5 +1,12 @@
 # Revision history for interval-patterns
 
+## 0.0.5.0 -- 2022-02-12
+
+* `Data.Interval.Layered` provides a monoid like `IntervalSet`, but
+  that will keep track of the number of times a particular interval
+  has been added to the structure. This is useful for determining, e.g.,
+  how many clones you need to attend all today's meetings on time.
+
 ## 0.0.4.0 -- 2022-02-12
 
 * Rename project

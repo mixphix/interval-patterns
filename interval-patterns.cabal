@@ -1,25 +1,24 @@
 cabal-version: 3.6
 name: interval-patterns
-version: 0.0.4.0
+version: 0.0.5.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
-copyright: 2021 Melanie Brown
 license: BSD-3-Clause
 license-file: LICENSE
 homepage: https://github.com/cigsender/interval-patterns
 bug-reports: https://github.com/cigsender/interval-patterns/issues
-extra-source-files:
-  CHANGELOG.md
+extra-source-files: CHANGELOG.md
+copyright: 2021 Melanie Brown
 
 common interval-patterns
   build-depends:
-    base >= 4.11 && < 5,
-    containers,
-    multiset,
-    parameterized-utils,
-    relude >= 1.0.0.1 && < 1.1,
-    time,
-    time-compat >= 1.9.6.1 && < 1.10,
+    , base >= 4.11 && < 5
+    , containers
+    , multiset
+    , parameterized-utils
+    , relude >= 1.0.0.1 && < 1.1
+    , time
+    , time-compat >= 1.9.6.1 && < 1.10
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -56,10 +55,7 @@ common interval-patterns
     TypeFamilies
     TypeOperators
     ViewPatterns
-  ghc-options:
-    -Wall
-    -Wcompat
-    -Wno-unticked-promoted-constructors
+  ghc-options: -Wall -Wcompat -Wno-unticked-promoted-constructors
   mixins:
     base hiding (Prelude)
     , relude (Relude as Prelude)
@@ -69,20 +65,18 @@ library
   import: interval-patterns
   hs-source-dirs: src
   exposed-modules:
-    Data.Suspension
     Data.Interval
-    Data.Interval.Types
     Data.Interval.Adjacency
+    Data.Interval.Layered
     Data.Interval.Set
-    Data.Timeframe
+    Data.Interval.Types
     Data.OneOrTwo
+    Data.Suspension
+    Data.Timeframe
 
 test-suite tests
-  type: exitcode-stdio-1.0
   import: interval-patterns
+  type: exitcode-stdio-1.0
   hs-source-dirs: tests
   main-is: Main.hs
-  build-depends:
-    base,
-    interval-patterns,
-    relude
+  build-depends: base, interval-patterns, relude
