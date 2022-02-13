@@ -76,4 +76,3 @@ test-suite tests
   type: exitcode-stdio-1.0
   hs-source-dirs: tests
   main-is: Main.hs
-  build-depends: base, interval-patterns, relude
