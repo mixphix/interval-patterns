@@ -8,7 +8,7 @@ license-file: LICENSE
 homepage: https://github.com/cigsender/interval-patterns
 bug-reports: https://github.com/cigsender/interval-patterns/issues
 extra-source-files: CHANGELOG.md
-copyright: 2021 Melanie Brown
+copyright: 2022 Melanie Brown
 
 common interval-patterns
   build-depends:
