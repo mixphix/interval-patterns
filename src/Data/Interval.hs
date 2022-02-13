@@ -16,7 +16,9 @@ module Data.Interval
     oppose,
     Interval (..),
     imap,
+    imapS,
     itraverse,
+    itraverseS,
     pattern (:<->:),
     pattern (:<-|:),
     pattern (:|->:),
@@ -277,14 +279,42 @@ imap f = \case
   l :<-|: u -> fmap f l :<-|: fmap f u
   l :|-|: u -> fmap f l :|-|: fmap f u
 
+-- | Same as 'imap' but on the 'Suspension' of the underlying type.
+imapS ::
+  (Ord x, Ord y) =>
+  (Suspension x -> Suspension y) ->
+  Interval x ->
+  Interval y
+imapS f = \case
+  l :<->: u -> f l :<->: f u
+  l :|->: u -> f l :|->: f u
+  l :<-|: u -> f l :<-|: f u
+  l :|-|: u -> f l :|-|: f u
+
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
 -- prevent it from being 'Traversable', this will have to suffice.
-itraverse :: (Ord x, Ord y, Applicative f) => (x -> f y) -> Interval x -> f (Interval y)
+itraverse ::
+  (Ord x, Ord y, Applicative f) =>
+  (x -> f y) ->
+  Interval x ->
+  f (Interval y)
 itraverse f = \case
   l :<->: u -> liftA2 (:<->:) (traverse f l) (traverse f u)
   l :|->: u -> liftA2 (:|->:) (traverse f l) (traverse f u)
   l :<-|: u -> liftA2 (:<-|:) (traverse f l) (traverse f u)
   l :|-|: u -> liftA2 (:|-|:) (traverse f l) (traverse f u)
+
+-- | Same as 'itraverse' but on the 'Suspension' of the underlying type.
+itraverseS ::
+  (Ord x, Ord y, Applicative f) =>
+  (Suspension x -> f (Suspension y)) ->
+  Interval x ->
+  f (Interval y)
+itraverseS f = \case
+  l :<->: u -> liftA2 (:<->:) (f l) (f u)
+  l :|->: u -> liftA2 (:|->:) (f l) (f u)
+  l :<-|: u -> liftA2 (:<-|:) (f l) (f u)
+  l :|-|: u -> liftA2 (:|-|:) (f l) (f u)
 
 infix 5 :<->:
 

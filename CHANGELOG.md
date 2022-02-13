@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.0.7.1 -- 2022-02-13
+
+* `imapS` and `itraverseS`
+
 ## 0.0.7.0 -- 2022-02-13
 
 * introduce strictness annotations for `Suspension`, `Interval`, and `Adjacency`
