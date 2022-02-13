@@ -1,6 +1,6 @@
 cabal-version: 3.6
 name: interval-patterns
-version: 0.0.5.0
+version: 0.0.6.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
 license: BSD-3-Clause
@@ -15,7 +15,6 @@ common interval-patterns
     , base >= 4.11 && < 5
     , containers
     , multiset
-    , parameterized-utils
     , relude >= 1.0.0.1 && < 1.1
     , time
     , time-compat >= 1.9.6.1 && < 1.10
@@ -66,10 +65,8 @@ library
   hs-source-dirs: src
   exposed-modules:
     Data.Interval
-    Data.Interval.Adjacency
     Data.Interval.Layered
     Data.Interval.Set
-    Data.Interval.Types
     Data.OneOrTwo
     Data.Suspension
     Data.Timeframe

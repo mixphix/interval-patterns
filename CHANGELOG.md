@@ -1,5 +1,11 @@
 # Revision history for interval-patterns
 
+## 0.0.6.0 -- 2022-02-13
+
+* remove `AdjacencyRepr` (don't need a type parameter you're just gonna hide)
+* amalgamate `split` into `adjacency`
+* no need for weird import chain, define everything in `Data.Interval`
+
 ## 0.0.5.0 -- 2022-02-12
 
 * `Data.Interval.Layered` provides a monoid like `IntervalSet`, but

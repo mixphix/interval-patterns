@@ -20,8 +20,8 @@ module Data.Interval.Set
   )
 where
 
+import Data.Interval (Interval)
 import Data.Interval qualified as I
-import Data.Interval.Types (Interval)
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Set qualified as Set
 
