@@ -1,6 +1,6 @@
 cabal-version: 3.6
 name: interval-patterns
-version: 0.0.6.1
+version: 0.0.7.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
 license: BSD-3-Clause

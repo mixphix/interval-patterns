@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.0.7.0 -- 2022-02-13
+
+* introduce strictness annotations for `Suspension`, `Interval`, and `Adjacency`
+
 ## 0.0.6.1 -- 2022-02-13
 
 * fix `Num` instance for `Suspension`
