@@ -1,5 +1,10 @@
 # Revision history for interval-patterns
 
+## Upcoming changes
+
+* `instance Monoid Suspension` now lifts monoids only
+* add `instance Group x => Group (Suspension x)`
+
 ## 0.0.9.0 -- 2022-02-15
 
 * `Layers` is now a two-parameter type, and `nestings` supports arbitrary
