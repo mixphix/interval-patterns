@@ -64,8 +64,8 @@ instance (Semigroup x) => Semigroup (Suspension x) where
   _ <> Zenit = Zenit
   Merid x <> Merid y = Merid (x <> y)
 
-instance (Semigroup x) => Monoid (Suspension x) where
-  mempty = Nadir
+instance (Monoid x) => Monoid (Suspension x) where
+  mempty = Merid mempty
 
 instance (Num x) => Num (Suspension x) where
   Nadir + Zenit = error "tried to perform Nadir + Zenit"
