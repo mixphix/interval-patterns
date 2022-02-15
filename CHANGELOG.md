@@ -6,6 +6,7 @@
 * add `instance Group x => Group (Suspension x)`
 * `Data.Interval.unions` now sorts the list first; add `unionsAsc`
 * `Covering.unionsSet` uses `from/toAscList` and `unionsAsc`
+* `instance Group y => Group (Layers x y)`
 
 ## 0.0.9.0 -- 2022-02-15
 

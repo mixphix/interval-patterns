@@ -15,6 +15,7 @@ module Data.Interval.Layers
   )
 where
 
+import Data.Group (Group (..))
 import Data.Interval (Adjacency (..), Interval, pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Covering (Covering)
@@ -34,6 +35,9 @@ instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
 
 instance (Ord x, Semigroup y) => Monoid (Layers x y) where
   mempty = Layers mempty
+
+instance (Ord x, Group y) => Group (Layers x y) where
+  invert (Layers s) = Layers (fmap invert s)
 
 -- | A blank canvas.
 empty :: Layers x y
