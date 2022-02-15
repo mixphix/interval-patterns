@@ -1,7 +1,8 @@
-module Data.Interval.Layered
-  ( IntervalLayer,
+module Data.Interval.Layers
+  ( Layers,
     toLayers,
     layers,
+    Data.Interval.Layers.toList,
     empty,
     singleton,
     insert,
@@ -14,47 +15,55 @@ module Data.Interval.Layered
   )
 where
 
+import Data.IntMap.Strict qualified as IntMap
 import Data.Interval (Adjacency (..), Interval)
 import Data.Interval qualified as I
-import Data.Interval.Set (IntervalSet)
-import Data.Interval.Set qualified as IS
+import Data.Interval.Covering (Covering)
+import Data.Interval.Covering qualified as Covering
 import Data.MultiSet (MultiSet)
 import Data.MultiSet qualified as Bag
 import Prelude hiding (empty)
 
--- The 'IntervalLayer's of an ordered type are like an 'IntervalSet',
+-- The 'Layers' of an ordered type are like a 'Covering',
 -- but that keeps track of how many times each point has been covered.
-newtype IntervalLayer x = IntervalLayer (MultiSet (Interval x))
+newtype Layers x = Layers (MultiSet (Interval x))
   deriving (Eq, Ord, Show, Generic, Typeable)
 
-instance (Ord x) => Semigroup (IntervalLayer x) where
-  IntervalLayer s1 <> IntervalLayer s2 =
-    IntervalLayer . Bag.fromOccurList . nestings $
+instance (Ord x) => Semigroup (Layers x) where
+  Layers s1 <> Layers s2 =
+    Layers . Bag.fromOccurList . nestings $
       Bag.toAscOccurList s1 <> Bag.toAscOccurList s2
 
-instance (Ord x) => Monoid (IntervalLayer x) where
-  mempty = IntervalLayer mempty
+instance (Ord x) => Monoid (Layers x) where
+  mempty = Layers mempty
 
-empty :: forall x. IntervalLayer x
-empty = IntervalLayer Bag.empty
+empty :: forall x. Layers x
+empty = Layers Bag.empty
 
-singleton :: forall x. (Ord x) => Interval x -> IntervalLayer x
-singleton i = IntervalLayer (Bag.singleton i)
+singleton :: forall x. (Ord x) => Interval x -> Layers x
+singleton i = Layers (Bag.singleton i)
 
-toLayers :: forall x. (Ord x) => [Interval x] -> IntervalLayer x
+toLayers :: forall x. (Ord x) => [Interval x] -> Layers x
 toLayers = foldMap singleton
 
-layers :: forall x. (Ord x) => IntervalLayer x -> [Interval x]
-layers (IntervalLayer s) = toList s
+layers :: forall x. (Ord x) => Layers x -> IntMap (Covering x)
+layers (Layers s) =
+  Bag.foldOccur
+    (\i io -> IntMap.insertWith (<>) io (Covering.singleton i))
+    mempty
+    s
 
-squash :: forall x. (Ord x) => IntervalLayer x -> IntervalSet x
-squash (IntervalLayer s) = foldMap IS.singleton s
+toList :: forall x. (Ord x) => Layers x -> [(Int, Interval x)]
+toList (Layers s) = swap <$> Bag.toAscOccurList s
 
-layersAt :: forall x. (Ord x) => x -> IntervalLayer x -> Int
-layersAt x (IntervalLayer s) =
+squash :: forall x. (Ord x) => Layers x -> Covering x
+squash (Layers s) = foldMap Covering.singleton s
+
+layersAt :: forall x. (Ord x) => x -> Layers x -> Int
+layersAt x (Layers s) =
   Bag.foldOccur (\i occ acc -> if I.within x i then acc + occ else acc) 0 s
 
-insert :: forall x. (Ord x) => Interval x -> IntervalLayer x -> IntervalLayer x
+insert :: forall x. (Ord x) => Interval x -> Layers x -> Layers x
 insert = mappend . singleton
 
 nestings ::
@@ -111,7 +120,7 @@ nestings = \case
           After i j -> (i, io) : nestings ((j, jo) : js)
   x -> x
 
-cutout :: (Ord x) => Interval x -> IntervalLayer x -> IntervalLayer x
-cutout i (IntervalLayer s) = IntervalLayer (Bag.concatMap listDiff s)
+cutout :: (Ord x) => Interval x -> Layers x -> Layers x
+cutout i (Layers s) = Layers (Bag.concatMap listDiff s)
   where
-    listDiff = maybe [] toList . (`I.difference` i)
+    listDiff = maybe [] Prelude.toList . (`I.difference` i)

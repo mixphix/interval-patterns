@@ -1,12 +1,28 @@
-module Data.Timeframe where
+module Data.Timeframe
+  ( Timeframe,
+    module Data.Interval,
+    localTimeframeAt,
+    localTimeframe,
+    pureLocalTimeframe,
+    duration,
+    Event,
+    event,
+    Calendar (..),
+    singleton,
+    calendar,
+    addEvent,
+    totalDuration,
+  )
+where
 
 import Data.Interval
-import Data.Interval.Set (IntervalSet)
-import Data.Interval.Set qualified as IS
+import Data.Interval.Layers (Layers)
+import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict qualified as Map
 import Data.Time.Compat
 import GHC.IO (unsafePerformIO)
 
+-- | > type Timeframe = Interval UTCTime
 type Timeframe = Interval UTCTime
 
 localTimeframeAt :: TimeZone -> LocalTime -> LocalTime -> Timeframe
@@ -24,36 +40,39 @@ pureLocalTimeframe t1 t2 =
 duration :: Timeframe -> Maybe NominalDiffTime
 duration = measuring diffUTCTime
 
-type Event = IntervalSet UTCTime
+-- | An 'Event' is something that happens for a period of time.
+--
+-- > type Event = Layers UTCTime
+type Event = Layers UTCTime
 
 event :: Timeframe -> Event
-event = IS.singleton
+event = Layers.singleton
 
-singleton :: (Ord e) => e -> Event -> Calendar e
-singleton e ev = Calendar (Map.singleton e ev)
-
-calendar :: (Ord e) => e -> Timeframe -> Calendar e
-calendar e tf = singleton e (IS.singleton tf)
-
-addEvent :: (Ord e) => e -> Event -> Calendar e -> Calendar e
-addEvent e ev (Calendar c) = Calendar (Map.insertWith (<>) e ev c)
-
-newtype Calendar e = Calendar {getCalendar :: Map e Event}
+newtype Calendar ev = Calendar {getCalendar :: Map ev Event}
   deriving (Eq, Ord, Show, Typeable)
 
-instance (Ord e) => Semigroup (Calendar e) where
+instance (Ord ev) => Semigroup (Calendar ev) where
   Calendar a <> Calendar b = Calendar (Map.unionWith (<>) a b)
 
-instance (Ord e) => Monoid (Calendar e) where
+instance (Ord ev) => Monoid (Calendar ev) where
   mempty = Calendar mempty
 
-totalDuration :: (Ord e) => e -> Calendar e -> Maybe NominalDiffTime
-totalDuration e (Calendar c) = case c Map.!? e of
+singleton :: (Ord ev) => ev -> Event -> Calendar ev
+singleton ev cvg = Calendar (Map.singleton ev cvg)
+
+calendar :: (Ord ev) => ev -> Timeframe -> Calendar ev
+calendar ev tf = singleton ev (Layers.singleton tf)
+
+addEvent :: (Ord ev) => ev -> Event -> Calendar ev -> Calendar ev
+addEvent ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
+
+totalDuration :: (Ord ev) => ev -> Calendar ev -> Maybe NominalDiffTime
+totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
-  Just is -> foldr f (Just 0) (IS.intervalSet is)
+  Just is -> foldr f (Just 0) (Layers.toList is)
   where
-    f :: Timeframe -> Maybe NominalDiffTime -> Maybe NominalDiffTime
+    f :: (Int, Timeframe) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
     f _ Nothing = Nothing
-    f tf (Just x) = case duration tf of
+    f (n, tf) (Just x) = case (fromIntegral n *) <$> duration tf of
       Nothing -> Nothing
       Just y -> Just (x + y)

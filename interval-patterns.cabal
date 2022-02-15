@@ -65,8 +65,8 @@ library
   hs-source-dirs: src
   exposed-modules:
     Data.Interval
-    Data.Interval.Layered
-    Data.Interval.Set
+    Data.Interval.Layers
+    Data.Interval.Covering
     Data.OneOrTwo
     Data.Suspension
     Data.Timeframe
