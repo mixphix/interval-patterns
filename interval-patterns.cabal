@@ -14,6 +14,7 @@ common interval-patterns
   build-depends:
     , base >= 4.11 && < 5
     , containers
+    , groups >= 0.2.2
     , relude >= 1.0.0.1 && < 1.1
     , time
     , time-compat >= 1.9.6.1 && < 1.10

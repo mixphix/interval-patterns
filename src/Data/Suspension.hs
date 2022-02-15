@@ -10,6 +10,7 @@ module Data.Suspension
 where
 
 import Data.Data (Data)
+import Data.Group (Group (..))
 
 -- | The 'Suspension' of a type is its two-point extension:
 -- a "south pole" 'Nadir' and a "north pole" 'Zenit', if each value
@@ -66,6 +67,12 @@ instance (Semigroup x) => Semigroup (Suspension x) where
 
 instance (Monoid x) => Monoid (Suspension x) where
   mempty = Merid mempty
+
+instance (Group x) => Group (Suspension x) where
+  invert = \case
+    Nadir -> Zenit
+    Merid x -> Merid (invert x)
+    Zenit -> Nadir
 
 instance (Num x) => Num (Suspension x) where
   Nadir + Zenit = error "tried to perform Nadir + Zenit"
