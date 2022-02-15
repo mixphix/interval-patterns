@@ -7,6 +7,7 @@
 * `Data.Interval.unions` now sorts the list first; add `unionsAsc`
 * `Covering.unionsSet` uses `from/toAscList` and `unionsAsc`
 * `instance Group y => Group (Layers x y)`
+* `instance Functor Layers`
 
 ## 0.0.9.0 -- 2022-02-15
 

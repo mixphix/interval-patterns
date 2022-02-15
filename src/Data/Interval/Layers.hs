@@ -26,7 +26,14 @@ import Prelude hiding (empty)
 -- The 'Layers' of an ordered type @x@ are like a 'Covering',
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
-  deriving (Eq, Ord, Show, Generic, Typeable)
+  deriving
+    ( Eq,
+      Ord,
+      Show,
+      Functor,
+      Generic,
+      Typeable
+    )
 
 instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
   Layers s1 <> Layers s2 =
