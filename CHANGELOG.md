@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## Upcoming
+
+* switch definitions of `lower` and `lowerBound`, `upper` and `upperBound`
+
 ## 0.0.7.1 -- 2022-02-13
 
 * `imapS` and `itraverseS`

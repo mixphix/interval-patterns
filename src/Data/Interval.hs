@@ -382,6 +382,9 @@ pattern l :||: u = Merid l :|-|: Merid u
 pattern Whole :: (Ord x) => Interval x
 pattern Whole = Nadir :|-|: Zenit
 
+-- | Get the @(lower, upper)@ 'bounds' of an 'Interval'.
+--
+-- c.f. 'lower', 'upper'.
 bounds :: Interval x -> (SomeBound (Suspension x), SomeBound (Suspension x))
 bounds = \case
   l :<-->: u -> (SomeBound l, SomeBound u)
@@ -389,37 +392,35 @@ bounds = \case
   l :|-->: u -> (SomeBound l, SomeBound u)
   l :|--|: u -> (SomeBound l, SomeBound u)
 
+-- | Get the lower bound of an interval.
+--
+-- > lower = fst . bounds
+lower :: (Ord x) => Interval x -> SomeBound (Suspension x)
+lower = fst . bounds
+
+-- | Get the upper bound of an interval.
+--
+-- > upper = snd . bounds
+upper :: (Ord x) => Interval x -> SomeBound (Suspension x)
+upper = snd . bounds
+
 -- | Get the lower bound of an interval
 -- (with the bound expressed at the term level).
-lower :: (Ord x) => Interval x -> (Suspension x, Extremum)
-lower = \case
+lowerBound :: (Ord x) => Interval x -> (Suspension x, Extremum)
+lowerBound = \case
   l :<->: _ -> (l, Infimum)
   l :<-|: _ -> (l, Infimum)
   l :|->: _ -> (l, Minimum)
   l :|-|: _ -> (l, Minimum)
 
-lowerBound :: (Ord x) => Interval x -> SomeBound (Suspension x)
-lowerBound = \case
-  l :<->: _ -> SomeBound (Inf l)
-  l :<-|: _ -> SomeBound (Inf l)
-  l :|->: _ -> SomeBound (Min l)
-  l :|-|: _ -> SomeBound (Min l)
-
 -- | Get the upper bound of an interval
 -- (with the bound expressed at the term level).
-upper :: (Ord x) => Interval x -> (Suspension x, Extremum)
-upper = \case
+upperBound :: (Ord x) => Interval x -> (Suspension x, Extremum)
+upperBound = \case
   _ :<->: u -> (u, Supremum)
   _ :<-|: u -> (u, Maximum)
   _ :|->: u -> (u, Supremum)
   _ :|-|: u -> (u, Maximum)
-
-upperBound :: (Ord x) => Interval x -> SomeBound (Suspension x)
-upperBound = \case
-  _ :<->: u -> SomeBound (Sup u)
-  _ :<-|: u -> SomeBound (Max u)
-  _ :|->: u -> SomeBound (Sup u)
-  _ :|-|: u -> SomeBound (Max u)
 
 -- | Given 'SomeBound's, try to make an interval.
 interval ::
@@ -484,7 +485,7 @@ converseAdjacency = \case
 -- >>> hull (Nadir :<-|: 3) (3 :<|: 4)
 -- (Nadir :<-|: Merid 4)
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
-hull i1 i2 = case (lowerBound (min i1 i2), upperBound (max i1 i2)) of
+hull i1 i2 = case (lower (min i1 i2), upper (max i1 i2)) of
   (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
   (SomeBound l@(Inf _), SomeBound u@(Max _)) -> l :<--|: u
   (SomeBound l@(Min _), SomeBound u@(Sup _)) -> l :|-->: u
@@ -735,7 +736,7 @@ union ::
   OneOrTwo (Interval x)
 union i1 i2 = case adjacency i1 i2 of
   Before i j
-    | fst (upper i) == fst (lower j) -> One $ hull i j
+    | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
     | otherwise -> Two i j
   Meets i j k -> One $ hulls (k :| [hull i j])
   Overlaps i j k -> One $ hulls (i :| [j, k])
@@ -749,7 +750,7 @@ union i1 i2 = case adjacency i1 i2 of
   OverlappedBy i j k -> One $ hulls (i :| [j, k])
   MetBy i j k -> One $ hulls (k :| [hull i j])
   After i j
-    | fst (upper i) == fst (lower j) -> One $ hull i j
+    | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
     | otherwise -> Two i j
 
 -- | Get the union of a list of intervals.
@@ -894,9 +895,9 @@ measuring f = \case
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
   Before i j ->
-    meridToMaybe $ on (-) unSomeBound (lowerBound j) (upperBound i)
+    meridToMaybe $ on (-) unSomeBound (lower j) (upper i)
   After i j ->
-    meridToMaybe $ on (-) unSomeBound (lowerBound j) (upperBound i)
+    meridToMaybe $ on (-) unSomeBound (lower j) (upper i)
   _ -> Just 0
 
 -- | @m '+/-' r@ creates the closed interval centred at @m@ with radius @r@.
