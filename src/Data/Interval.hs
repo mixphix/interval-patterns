@@ -60,6 +60,7 @@ module Data.Interval
     unions,
     complement,
     difference,
+    (\\),
     symmetricDifference,
     measure,
     measuring,
@@ -820,6 +821,15 @@ difference i1 i2 = case adjacency i1 i2 of
   OverlappedBy _ _ k -> Just $ One k
   MetBy i _ _ -> Just $ One i
   After i _ -> Just $ One i
+
+-- | Infix synonym for 'difference'
+(\\) ::
+  forall x.
+  (Ord x) =>
+  Interval x ->
+  Interval x ->
+  Maybe (OneOrTwo (Interval x))
+(\\) = difference
 
 -- | The difference of the union and intersection of two intervals.
 --
