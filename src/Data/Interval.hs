@@ -58,6 +58,7 @@ module Data.Interval
     intersect,
     union,
     unions,
+    unionsAsc,
     complement,
     difference,
     (\\),
@@ -754,14 +755,21 @@ union i1 i2 = case adjacency i1 i2 of
     | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
     | otherwise -> Two i j
 
--- | Get the union of a list of intervals.
+-- | /O(n log n)/. Get the union of a list of intervals.
+--
+-- This function uses 'sort'. See also 'unionsAsc'.
 unions :: forall x. (Ord x) => [Interval x] -> [Interval x]
-unions = foldr f []
-  where
-    f i [] = [i]
-    f i (j : js) = case i `union` j of
-      One i' -> f i' js
-      _ -> j : f i js
+unions = unionsAsc . sort
+
+-- | /O(n)/. Get the union of a sorted list of intervals.
+--
+-- NOTE: The input condition is not checked. Use with care.
+unionsAsc :: forall x. (Ord x) => [Interval x] -> [Interval x]
+unionsAsc = \case
+  i : j : is -> case i `union` j of
+    One k -> unions (k : is)
+    _ -> i : unions (j : is)
+  x -> x
 
 -- | Take the complement of the interval, as possibly 'OneOrTwo'.
 --

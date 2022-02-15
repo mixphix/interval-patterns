@@ -4,7 +4,8 @@
 
 * `instance Monoid Suspension` now lifts monoids only
 * add `instance Group x => Group (Suspension x)`
-* `Covering.unionsSet` uses `from/toAscList`
+* `Data.Interval.unions` now sorts the list first; add `unionsAsc`
+* `Covering.unionsSet` uses `from/toAscList` and `unionsAsc`
 
 ## 0.0.9.0 -- 2022-02-15
 
