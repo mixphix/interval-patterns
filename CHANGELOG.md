@@ -4,6 +4,7 @@
 
 * `instance Monoid Suspension` now lifts monoids only
 * add `instance Group x => Group (Suspension x)`
+* `Covering.unionsSet` uses `from/toAscList`
 
 ## 0.0.9.0 -- 2022-02-15
 

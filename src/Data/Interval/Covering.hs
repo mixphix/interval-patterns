@@ -45,7 +45,7 @@ intervalSet :: (Ord x) => Covering x -> Set (Interval x)
 intervalSet (Covering is) = unionsSet is
 
 unionsSet :: (Ord x) => Set (Interval x) -> Set (Interval x)
-unionsSet = Set.fromList . I.unions . Set.toList
+unionsSet = Set.fromAscList . I.unions . Set.toAscList
 
 -- | The empty 'Covering'.
 empty :: (Ord x) => Covering x
