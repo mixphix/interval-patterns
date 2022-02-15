@@ -1,10 +1,10 @@
 module Data.Interval.Covering
   ( Covering,
+    covering,
     intervalSet,
     Data.Interval.Covering.empty,
     singleton,
     Data.Interval.Covering.null,
-    intervals,
     insert,
     whole,
     cutout,
@@ -36,6 +36,10 @@ import Data.Set qualified as Set
 newtype Covering x = Covering (Set (Interval x))
   deriving (Eq, Ord, Show, Generic, Typeable)
 
+-- | Turn a list of 'Interval's into an 'Covering'.
+covering :: (Ord x) => [Interval x] -> Covering x
+covering = Covering . Set.fromList . I.unions
+
 -- | Turn an 'Covering' into a 'Set.Set' of 'Interval's.
 intervalSet :: (Ord x) => Covering x -> Set (Interval x)
 intervalSet (Covering is) = unionsSet is
@@ -54,10 +58,6 @@ singleton x = Covering (Set.singleton x)
 -- | Is this 'Covering' empty?
 null :: Covering x -> Bool
 null (Covering is) = Set.null is
-
--- | Turn a list of 'Interval's into an 'Covering'.
-intervals :: (Ord x) => [Interval x] -> Covering x
-intervals = Covering . Set.fromList . I.unions
 
 -- | Insert an 'Interval' into an 'Covering', agglomerating along the way.
 insert :: (Ord x) => Interval x -> Covering x -> Covering x
@@ -79,8 +79,8 @@ instance (Ord x) => One (Covering x) where
 -- | Completely remove an 'Interval' from an 'Covering'.
 cutout :: (Ord x) => Interval x -> Covering x -> Covering x
 cutout i (Covering is) =
-  intervals . (`foldMap` is) $
-    (`I.difference` i) >>> \case
+  covering . flip foldMap is $
+    (I.\\ i) >>> \case
       Nothing -> mempty
       Just (One j) -> [j]
       Just (Two j k) -> [j, k]

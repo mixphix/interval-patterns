@@ -6,6 +6,7 @@
 * universal `Bounded` and lifted `Enum` for Suspension
 * `(Data.Interval.\\)`
 * change names from `IntervalSet -> Covering` and `IntervalLayer -> Layers`
+* rename `Covering.intervals` to `Covering.covering` ("smart constructor")
 
 ## 0.0.7.1 -- 2022-02-13
 
