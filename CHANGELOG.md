@@ -1,7 +1,8 @@
 # Revision history for interval-patterns
 
-## Upcoming changes
+## 0.0.10.0 -- 2022-02-15
 
+* add dependency `group-theory`
 * `instance Monoid Suspension` now lifts monoids only
 * add `instance Group x => Group (Suspension x)`
 * `Data.Interval.unions` now sorts the list first; add `unionsAsc`
