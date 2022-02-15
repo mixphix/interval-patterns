@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.0.10.1 -- 2022-02-15
+
+* add `Layers.remove` and `Layers.baseline`
+
 ## 0.0.10.0 -- 2022-02-15
 
 * add dependency `group-theory`

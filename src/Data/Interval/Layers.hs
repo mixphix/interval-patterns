@@ -8,7 +8,8 @@ module Data.Interval.Layers
     squash,
     thickness,
     thickest,
-    -- dig,
+    remove,
+    baseline,
 
     -- ** Helper functions
     nestings,
@@ -17,7 +18,7 @@ module Data.Interval.Layers
 where
 
 import Data.Group (Group (..))
-import Data.Interval (Adjacency (..), Interval, pattern (:<>:))
+import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Covering (Covering)
 import Data.Interval.Covering qualified as Covering
@@ -153,5 +154,10 @@ nestingsAsc = \case
           After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
   x -> x
 
--- dig :: (Ord x, Group y) => Interval x -> y -> Layers x y -> Layers x y
--- dig ix y (Layers s) = _
+-- | Take away a thickness over a given base from the 'Layers'.
+remove :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
+remove y ix = insert ix (invert y)
+
+-- | Add the given thickness to every point.
+baseline :: (Ord x, Semigroup y) => y -> Layers x y -> Layers x y
+baseline = insert Whole
