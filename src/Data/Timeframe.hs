@@ -43,10 +43,10 @@ duration = measuring diffUTCTime
 -- | An 'Event' is something that happens for a period of time.
 --
 -- > type Event = Layers UTCTime
-type Event = Layers UTCTime
+type Event = Layers UTCTime (Sum Int)
 
 event :: Timeframe -> Event
-event = Layers.singleton
+event = (`Layers.singleton` 1)
 
 newtype Calendar ev = Calendar {getCalendar :: Map ev Event}
   deriving (Eq, Ord, Show, Typeable)
@@ -61,7 +61,7 @@ singleton :: (Ord ev) => ev -> Event -> Calendar ev
 singleton ev cvg = Calendar (Map.singleton ev cvg)
 
 calendar :: (Ord ev) => ev -> Timeframe -> Calendar ev
-calendar ev tf = singleton ev (Layers.singleton tf)
+calendar ev tf = singleton ev (Layers.singleton tf 1)
 
 addEvent :: (Ord ev) => ev -> Event -> Calendar ev -> Calendar ev
 addEvent ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
@@ -71,8 +71,8 @@ totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
   Just is -> foldr f (Just 0) (Layers.toList is)
   where
-    f :: (Int, Timeframe) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
+    f :: (Timeframe, Sum Int) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
     f _ Nothing = Nothing
-    f (n, tf) (Just x) = case (fromIntegral n *) <$> duration tf of
+    f (tf, Sum n) (Just x) = case (fromIntegral n *) <$> duration tf of
       Nothing -> Nothing
       Just y -> Just (x + y)

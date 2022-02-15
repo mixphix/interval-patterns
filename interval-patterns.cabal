@@ -1,6 +1,6 @@
 cabal-version: 3.6
 name: interval-patterns
-version: 0.0.8.0
+version: 0.0.9.0
 author: Melanie Brown
 maintainer: brown.m@pm.me
 license: BSD-3-Clause
@@ -14,7 +14,6 @@ common interval-patterns
   build-depends:
     , base >= 4.11 && < 5
     , containers
-    , multiset
     , relude >= 1.0.0.1 && < 1.1
     , time
     , time-compat >= 1.9.6.1 && < 1.10

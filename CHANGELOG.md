@@ -1,5 +1,12 @@
 # Revision history for interval-patterns
 
+## 0.0.9.0 -- 2022-02-15
+
+* `Layers` is now a two-parameter type, and `nestings` supports arbitrary
+  semigroups instead of the previous restriction to `Int`.
+* drop `multiset` dependency as a result
+* `type Event = Layers UTCTime (Sum Int)`
+
 ## 0.0.8.0 -- 2022-02-15
 
 * switch definitions of `lower` and `lowerBound`, `upper` and `upperBound`
