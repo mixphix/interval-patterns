@@ -10,8 +10,9 @@ module Data.Interval.Layers
     thickest,
     -- dig,
 
-    -- ** Helper functiyns
+    -- ** Helper functions
     nestings,
+    nestingsAsc,
   )
 where
 
@@ -37,8 +38,8 @@ newtype Layers x y = Layers (Map (Interval x) y)
 
 instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
   Layers s1 <> Layers s2 =
-    Layers . Map.fromList . nestings $
-      Map.toAscList s1 <> Map.toAscList s2
+    let s = Map.toAscList $ Map.unionWith (<>) s1 s2
+     in Layers $ Map.fromAscList (nestingsAsc s)
 
 instance (Ord x, Semigroup y) => Monoid (Layers x y) where
   mempty = Layers mempty
@@ -97,53 +98,59 @@ nestings ::
   (Ord x, Semigroup y) =>
   [(Interval x, y)] ->
   [(Interval x, y)]
-nestings = \case
+nestings = nestingsAsc . sortOn fst
+
+nestingsAsc ::
+  (Ord x, Semigroup y) =>
+  [(Interval x, y)] ->
+  [(Interval x, y)]
+nestingsAsc = \case
   (a, ay) : (b, by) : js ->
     let ((i', iy), (j', jy))
           | a <= b = ((a, ay), (b, by))
           | otherwise = ((b, by), (a, ay))
      in case I.adjacency i' j' of
-          Before i j -> (i, iy) : nestings ((j, jy) : js)
-          Meets i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
+          Before i j -> (i, iy) : nestingsAsc ((j, jy) : js)
+          Meets i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
           Overlaps i j k ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) :
               (k, jy) : js
           Starts i j ->
-            nestings $
+            nestingsAsc $
               (i, iy <> jy) :
               (j, jy) : js
           During i j k ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) :
               (k, jy) : js
           Finishes i j ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) : js
-          Identical i -> (i, iy <> jy) : nestings js
+          Identical i -> (i, iy <> jy) : nestingsAsc js
           FinishedBy i j ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) : js
           Contains i j k ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) :
               (k, jy) : js
           StartedBy i j ->
-            nestings $
+            nestingsAsc $
               (i, iy <> jy) :
               (j, jy) : js
           OverlappedBy i j k ->
-            nestings $
+            nestingsAsc $
               (i, iy) :
               (j, iy <> jy) :
               (k, jy) : js
-          MetBy i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
-          After i j -> (i, iy) : nestings ((j, jy) : js)
+          MetBy i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
+          After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
   x -> x
 
 -- dig :: (Ord x, Group y) => Interval x -> y -> Layers x y -> Layers x y

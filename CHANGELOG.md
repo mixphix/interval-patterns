@@ -8,6 +8,8 @@
 * `Covering.unionsSet` uses `from/toAscList` and `unionsAsc`
 * `instance Group y => Group (Layers x y)`
 * `instance Functor Layers`
+* `nesting` now sorts the list first; add `nestingAsc`
+* `Semigroup Layers` uses `nestingAsc`
 
 ## 0.0.9.0 -- 2022-02-15
 
