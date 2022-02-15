@@ -3,6 +3,7 @@
 ## Upcoming
 
 * switch definitions of `lower` and `lowerBound`, `upper` and `upperBound`
+* universal `Bounded` and lifted `Enum` for Suspension
 
 ## 0.0.7.1 -- 2022-02-13
 
