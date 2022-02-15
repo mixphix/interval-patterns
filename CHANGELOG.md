@@ -1,6 +1,6 @@
 # Revision history for interval-patterns
 
-## Upcoming
+## 0.0.8.0 -- 2022-02-15
 
 * switch definitions of `lower` and `lowerBound`, `upper` and `upperBound`
 * universal `Bounded` and lifted `Enum` for Suspension
