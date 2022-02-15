@@ -428,14 +428,14 @@ interval ::
   SomeBound (Suspension x) ->
   Interval x
 interval (SomeBound b1) (SomeBound b2) = case (b1, b2) of
-  (Min l, Max u) -> l :|-|: u
-  (Inf l, Max u) -> l :<-|: u
   (Min l, Sup u) -> l :|->: u
+  (Min l, Max u) -> l :|-|: u
   (Inf l, Sup u) -> l :<->: u
-  (Max u, Min l) -> l :|-|: u
-  (Max u, Inf l) -> l :<-|: u
+  (Inf l, Max u) -> l :<-|: u
   (Sup u, Min l) -> l :|->: u
   (Sup u, Inf l) -> l :<->: u
+  (Max u, Min l) -> l :|-|: u
+  (Max u, Inf l) -> l :<-|: u
   _ -> error "cannot make an interval with the given bounds"
 
 -- | According to
