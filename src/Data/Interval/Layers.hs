@@ -106,52 +106,48 @@ nestingsAsc ::
   [(Interval x, y)] ->
   [(Interval x, y)]
 nestingsAsc = \case
-  (a, ay) : (b, by) : js ->
-    let ((i', iy), (j', jy))
-          | a <= b = ((a, ay), (b, by))
-          | otherwise = ((b, by), (a, ay))
-     in case I.adjacency i' j' of
-          Before i j -> (i, iy) : nestingsAsc ((j, jy) : js)
-          Meets i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
-          Overlaps i j k ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) :
-              (k, jy) : js
-          Starts i j ->
-            nestingsAsc $
-              (i, iy <> jy) :
-              (j, jy) : js
-          During i j k ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) :
-              (k, jy) : js
-          Finishes i j ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) : js
-          Identical i -> (i, iy <> jy) : nestingsAsc js
-          FinishedBy i j ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) : js
-          Contains i j k ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) :
-              (k, jy) : js
-          StartedBy i j ->
-            nestingsAsc $
-              (i, iy <> jy) :
-              (j, jy) : js
-          OverlappedBy i j k ->
-            nestingsAsc $
-              (i, iy) :
-              (j, iy <> jy) :
-              (k, jy) : js
-          MetBy i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
-          After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
+  (i', iy) : (j', jy) : js -> case I.adjacency i' j' of
+    Before i j -> (i, iy) : nestingsAsc ((j, jy) : js)
+    Meets i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
+    Overlaps i j k ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) :
+        (k, jy) : js
+    Starts i j ->
+      nestingsAsc $
+        (i, iy <> jy) :
+        (j, jy) : js
+    During i j k ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) :
+        (k, jy) : js
+    Finishes i j ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) : js
+    Identical i -> (i, iy <> jy) : nestingsAsc js
+    FinishedBy i j ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) : js
+    Contains i j k ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) :
+        (k, jy) : js
+    StartedBy i j ->
+      nestingsAsc $
+        (i, iy <> jy) :
+        (j, jy) : js
+    OverlappedBy i j k ->
+      nestingsAsc $
+        (i, iy) :
+        (j, iy <> jy) :
+        (k, jy) : js
+    MetBy i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
+    After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
   x -> x
 
 -- | Take away a thickness over a given base from the 'Layers'.
