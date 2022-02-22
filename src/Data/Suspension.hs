@@ -39,8 +39,8 @@ instance Bounded (Suspension x) where
 instance (Ord x, Enum x, Bounded x) => Enum (Suspension x) where
   toEnum = \case
     0 -> Nadir
-    n | toEnum n > maxBound @x -> Zenit
-    n -> Merid (toEnum n)
+    n | pred n > fromEnum (maxBound @x) -> Zenit
+    n -> Merid (toEnum (pred n))
   fromEnum = \case
     Nadir -> 0
     Merid n -> 1 + fromEnum n
