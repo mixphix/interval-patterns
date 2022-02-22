@@ -20,12 +20,12 @@ where
 import Data.Group (Group (..))
 import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:<>:))
 import Data.Interval qualified as I
-import Data.Interval.Covering (Covering)
-import Data.Interval.Covering qualified as Covering
+import Data.Interval.Borel (Borel)
+import Data.Interval.Borel qualified as Borel
 import Data.Map.Strict qualified as Map
 import Prelude hiding (empty)
 
--- The 'Layers' of an ordered type @x@ are like a 'Covering',
+-- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
   deriving
@@ -66,8 +66,8 @@ toList (Layers s) = Map.toList s
 
 -- | Ignore the 'Layers' and focus only on whether points are 'within'
 -- any contained 'Interval' or not.
-squash :: (Ord x) => Layers x y -> Covering x
-squash (Layers s) = foldMap Covering.singleton (Map.keys s)
+squash :: (Ord x) => Layers x y -> Borel x
+squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y

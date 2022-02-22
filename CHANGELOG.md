@@ -1,5 +1,10 @@
 # Revision history for interval-patterns
 
+## 0.0.11.0
+
+* drop `Data.Suspension` entirely in favour of `Algebra.Lattice.Levitated`
+* rename `Data.Interval.{Set => Borel}` and add Lattice/Ring/Heyting instances
+
 ## 0.0.10.2 -- 2022-02-22
 
 * fix `Enum` for `Suspension`
