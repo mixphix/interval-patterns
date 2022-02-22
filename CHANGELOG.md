@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.0.10.2 -- 2022-02-22
+
+* fix `Enum` for `Suspension`
+
 ## 0.0.10.1 -- 2022-02-15
 
 * add `Layers.remove` and `Layers.baseline`
