@@ -1,4 +1,8 @@
-module Data.OneOrTwo where
+module Data.OneOrTwo
+  ( OneOrTwo (..),
+    oneOrTwo,
+  )
+where
 
 import Data.Data (Data)
 
