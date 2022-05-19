@@ -1,5 +1,13 @@
 # Revision history for interval-patterns
 
+## 0.1.0.0 - 2022-05-19
+
+* constructors behave more intuitively
+  * if the endpoints are equal, it becomes a closed interval
+  * when endpoints are reversed, using a smart constructor preserves the declared endpoint boundaries
+    (e.g. `6 :|>: 4` becomes `4 :<|: 6`)
+* tests
+
 ## 0.0.11.0 - 2022-03-08
 
 * drop `Data.Suspension` entirely in favour of `Algebra.Lattice.Levitated`

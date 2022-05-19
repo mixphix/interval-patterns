@@ -1,7 +1,8 @@
-cabal-version: 3.6
+cabal-version: 3.0
 name: interval-patterns
-version: 0.0.11.0
+version: 0.1.0.0
 author: Melanie Brown
+description: A library for easy manipulation of intervals according to their overlap.
 maintainer: brown.m@pm.me
 license: BSD-3-Clause
 license-file: LICENSE
@@ -56,6 +57,7 @@ common interval-patterns
     TypeFamilies
     TypeOperators
     ViewPatterns
+  default-language: Haskell2010
   ghc-options: -Wall -Wcompat -Wno-unticked-promoted-constructors
   mixins:
     base hiding (Prelude)
