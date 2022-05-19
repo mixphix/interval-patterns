@@ -330,21 +330,38 @@ pattern (:<->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<->: u <-
   Inf l :<-->: Sup u
   where
-    b1 :<->: b2 = Inf (min b1 b2) :<-->: Sup (max b1 b2)
+    b1 :<->: b2 =
+      let inf = min b1 b2
+          sup = max b1 b2
+       in case compare b1 b2 of
+            EQ -> Min inf :|--|: Max sup
+            _ -> Inf inf :<-->: Sup sup
 
 -- | A pattern synonym matching open-closed intervals.
 pattern (:<-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<-|: u <-
   Inf l :<--|: Max u
   where
-    b1 :<-|: b2 = Inf (min b1 b2) :<--|: Max (max b1 b2)
+    b1 :<-|: b2 =
+      let inf = min b1 b2
+          sup = max b1 b2
+       in case compare b1 b2 of
+            LT -> Inf inf :<--|: Max sup
+            EQ -> Min inf :|--|: Max sup
+            GT -> Min inf :|-->: Sup sup
 
 -- | A pattern synonym matching closed-open intervals.
 pattern (:|->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :|->: u <-
   Min l :|-->: Sup u
   where
-    b1 :|->: b2 = Min (min b1 b2) :|-->: Sup (max b1 b2)
+    b1 :|->: b2 =
+      let inf = min b1 b2
+          sup = max b1 b2
+       in case compare b1 b2 of
+            LT -> Min inf :|-->: Sup sup
+            EQ -> Min inf :|--|: Max sup
+            GT -> Inf inf :<--|: Max sup
 
 -- | A pattern synonym matching closed intervals.
 pattern (:|-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
@@ -365,19 +382,46 @@ infix 5 :||:
 
 -- | A pattern synonym matching finite open intervals.
 pattern (:<>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<>: u = Levitate l :<->: Levitate u
+pattern l :<>: u <- -- Levitate l :<->: Levitate u
+  Levitate l :<->: Levitate u
+  where
+    b1 :<>: b2 =
+      let inf = Levitate (min b1 b2)
+          sup = Levitate (max b1 b2)
+       in case compare inf sup of
+            EQ -> Min inf :|--|: Max sup
+            _ -> Inf inf :<-->: Sup sup
 
 -- | A pattern synonym matching finite open-closed intervals.
 pattern (:<|:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<|: u = Levitate l :<-|: Levitate u
+pattern l :<|: u <- -- Levitate l :<-|: Levitate u
+  Levitate l :<-|: Levitate u
+  where
+    b1 :<|: b2 =
+      let inf = Levitate (min b1 b2)
+          sup = Levitate (max b1 b2)
+       in case compare inf sup of
+            EQ -> Min inf :|--|: Max sup
+            _ -> Inf inf :<--|: Max sup
 
 -- | A pattern synonym matching finite closed-open intervals.
 pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :|>: u = Levitate l :|->: Levitate u
+pattern l :|>: u <- -- Levitate l :|->: Levitate u
+  Levitate l :|->: Levitate u
+  where
+    b1 :|>: b2 =
+      let inf = Levitate (min b1 b2)
+          sup = Levitate (max b1 b2)
+       in case compare inf sup of
+            EQ -> Min inf :|--|: Max sup
+            _ -> Inf inf :<--|: Max sup
 
 -- | A pattern synonym matching finite closed intervals.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :||: u = Levitate l :|-|: Levitate u
+pattern l :||: u <- -- Levitate l :|-|: Levitate u
+  Levitate l :|-|: Levitate u
+  where
+    b1 :||: b2 = Min (Levitate $ min b1 b2) :|--|: Max (Levitate $ max b1 b2)
 
 -- | The whole interval.
 pattern Whole :: (Ord x) => Interval x
@@ -623,7 +667,7 @@ setUpper x = \case
 -- | Calculate the 'Adjacency' between two intervals, according to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
 adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency x
-adjacency i1 i2 = case (on compare lower i1 i2, on compare upper i1 i2) of
+adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
   (LT, LT) -> case unSomeBound ub1 `compare` unSomeBound lb2 of
     LT -> Before i1 i2
     EQ -> case (ub1, lb2) of
