@@ -1,8 +1,7 @@
-module Data.OneOrTwo
-  ( OneOrTwo (..),
-    oneOrTwo,
-  )
-where
+module Data.OneOrTwo (
+  OneOrTwo (..),
+  oneOrTwo,
+) where
 
 import Data.Data (Data)
 
@@ -13,16 +12,16 @@ data OneOrTwo x
   = One !x
   | Two !x !x
   deriving
-    ( Eq,
-      Ord,
-      Show,
-      Read,
-      Generic,
-      Data,
-      Typeable,
-      Functor,
-      Foldable,
-      Traversable
+    ( Eq
+    , Ord
+    , Show
+    , Read
+    , Generic
+    , Data
+    , Typeable
+    , Functor
+    , Foldable
+    , Traversable
     )
 
 -- | Apply a 'oneOrTwo' argument function appropriately.

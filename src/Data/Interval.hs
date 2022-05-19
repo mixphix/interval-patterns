@@ -4,71 +4,70 @@
 -- License:     : BSD3 (see the file LICENSE)
 --
 -- Intervals over types and their operations.
-module Data.Interval
-  ( Extremum (..),
-    opposite,
-    Bound (..),
-    unBound,
-    Bounding (..),
-    compareBounds,
-    SomeBound (..),
-    unSomeBound,
-    oppose,
-    Interval (..),
-    imap,
-    imapS,
-    itraverse,
-    itraverseS,
-    pattern (:<->:),
-    pattern (:<-|:),
-    pattern (:|->:),
-    pattern (:|-|:),
-    pattern (:<>:),
-    pattern (:<|:),
-    pattern (:|>:),
-    pattern (:||:),
-    pattern Whole,
-    bounds,
-    lower,
-    lowerBound,
-    upper,
-    upperBound,
-    interval,
-    imin,
-    iinf,
-    isup,
-    imax,
-    hull,
-    hulls,
-    within,
-    point,
-    open,
-    close,
-    openclosed,
-    closedopen,
-    openLower,
-    closedLower,
-    openUpper,
-    closedUpper,
-    setLower,
-    setUpper,
-    Adjacency (..),
-    converseAdjacency,
-    adjacency,
-    intersect,
-    union,
-    unions,
-    unionsAsc,
-    complement,
-    difference,
-    (\\),
-    symmetricDifference,
-    measure,
-    measuring,
-    hausdorff,
-    (+/-),
-  )
-where
+module Data.Interval (
+  Extremum (..),
+  opposite,
+  Bound (..),
+  unBound,
+  Bounding (..),
+  compareBounds,
+  SomeBound (..),
+  unSomeBound,
+  oppose,
+  Interval (..),
+  imap,
+  imapS,
+  itraverse,
+  itraverseS,
+  pattern (:<->:),
+  pattern (:<-|:),
+  pattern (:|->:),
+  pattern (:|-|:),
+  pattern (:<>:),
+  pattern (:<|:),
+  pattern (:|>:),
+  pattern (:||:),
+  pattern Whole,
+  bounds,
+  lower,
+  lowerBound,
+  upper,
+  upperBound,
+  interval,
+  imin,
+  iinf,
+  isup,
+  imax,
+  hull,
+  hulls,
+  within,
+  point,
+  open,
+  close,
+  openclosed,
+  closedopen,
+  openLower,
+  closedLower,
+  openUpper,
+  closedUpper,
+  setLower,
+  setUpper,
+  Adjacency (..),
+  converseAdjacency,
+  adjacency,
+  intersect,
+  union,
+  unions,
+  unionsAsc,
+  complement,
+  difference,
+  (\\),
+  symmetricDifference,
+  measure,
+  measuring,
+  hausdorff,
+  (+/-),
+) where
 
 import Algebra.Lattice.Levitated
 import Data.Data (Data)
@@ -680,9 +679,9 @@ adjacency i1 i2 = case (on compare lower i1 i2, on compare upper i1 i2) of
           (openLower i1)
       _ -> After i2 i1
     LT -> After i2 i1
-  where
-    (lb1, ub1) = bounds i1
-    (lb2, ub2) = bounds i2
+ where
+  (lb1, ub1) = bounds i1
+  (lb2, ub2) = bounds i2
 
 -- | Calculate the intersection of two intervals, if it exists.
 --
@@ -819,10 +818,10 @@ difference i1 i2 = case adjacency i1 i2 of
   Before i _ -> Just $ One i
   Meets i _ _ -> Just $ One i
   Overlaps i _ _ -> Just $ One i
-  Starts {} -> Nothing
-  During {} -> Nothing
-  Finishes {} -> Nothing
-  Identical {} -> Nothing
+  Starts{} -> Nothing
+  During{} -> Nothing
+  Finishes{} -> Nothing
+  Identical{} -> Nothing
   FinishedBy i _ -> Just $ One i
   Contains i _ k -> Just $ Two i k
   StartedBy _ j -> Just $ One j

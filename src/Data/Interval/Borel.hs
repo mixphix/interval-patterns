@@ -1,25 +1,24 @@
-module Data.Interval.Borel
-  ( Borel,
-    borel,
-    intervalSet,
-    Data.Interval.Borel.empty,
-    singleton,
-    Data.Interval.Borel.null,
-    insert,
-    whole,
-    cutout,
-    member,
-    notMember,
-    union,
-    unions,
-    difference,
-    symmetricDifference,
-    complement,
-    intersection,
-    intersections,
-    hull,
-  )
-where
+module Data.Interval.Borel (
+  Borel,
+  borel,
+  intervalSet,
+  Data.Interval.Borel.empty,
+  singleton,
+  Data.Interval.Borel.null,
+  insert,
+  whole,
+  cutout,
+  member,
+  notMember,
+  union,
+  unions,
+  difference,
+  symmetricDifference,
+  complement,
+  intersection,
+  intersections,
+  hull,
+) where
 
 import Algebra.Heyting
 import Algebra.Lattice

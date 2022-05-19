@@ -1,21 +1,20 @@
-module Data.Interval.Layers
-  ( Layers,
-    Data.Interval.Layers.fromList,
-    Data.Interval.Layers.toList,
-    empty,
-    singleton,
-    insert,
-    squash,
-    thickness,
-    thickest,
-    remove,
-    baseline,
+module Data.Interval.Layers (
+  Layers,
+  Data.Interval.Layers.fromList,
+  Data.Interval.Layers.toList,
+  empty,
+  singleton,
+  insert,
+  squash,
+  thickness,
+  thickest,
+  remove,
+  baseline,
 
-    -- ** Helper functions
-    nestings,
-    nestingsAsc,
-  )
-where
+  -- ** Helper functions
+  nestings,
+  nestingsAsc,
+) where
 
 import Data.Group (Group (..))
 import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:<>:))
@@ -29,12 +28,12 @@ import Prelude hiding (empty)
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
   deriving
-    ( Eq,
-      Ord,
-      Show,
-      Functor,
-      Generic,
-      Typeable
+    ( Eq
+    , Ord
+    , Show
+    , Functor
+    , Generic
+    , Typeable
     )
 
 instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
@@ -72,8 +71,8 @@ squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
 thickness x (Layers s) = case Map.lookupLE (x :<>: x) s of
-  Nothing -> mempty
-  Just (ix, y) -> bool mempty y (x `I.within` ix)
+  Just (ix, y) | x `I.within` ix -> y
+  _ -> mempty
 
 -- | Where and how thick is the thickest 'Interval'?
 thickest :: (Ord x, Ord y) => Layers x y -> Maybe (Interval x, y)

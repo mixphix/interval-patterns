@@ -1,19 +1,18 @@
-module Data.Timeframe
-  ( Timeframe,
-    module Data.Interval,
-    localTimeframeAt,
-    localTimeframe,
-    pureLocalTimeframe,
-    duration,
-    Event,
-    event,
-    Calendar (..),
-    singleton,
-    calendar,
-    addEvent,
-    totalDuration,
-  )
-where
+module Data.Timeframe (
+  Timeframe,
+  module Data.Interval,
+  localTimeframeAt,
+  localTimeframe,
+  pureLocalTimeframe,
+  duration,
+  Event,
+  event,
+  Calendar (..),
+  singleton,
+  calendar,
+  addEvent,
+  totalDuration,
+) where
 
 import Data.Interval
 import Data.Interval.Layers (Layers)
@@ -70,9 +69,9 @@ totalDuration :: (Ord ev) => ev -> Calendar ev -> Maybe NominalDiffTime
 totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
   Just is -> foldr f (Just 0) (Layers.toList is)
-  where
-    f :: (Timeframe, Sum Int) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
-    f _ Nothing = Nothing
-    f (tf, Sum n) (Just x) = case (fromIntegral n *) <$> duration tf of
-      Nothing -> Nothing
-      Just y -> Just (x + y)
+ where
+  f :: (Timeframe, Sum Int) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
+  f _ Nothing = Nothing
+  f (tf, Sum n) (Just x) = case (fromIntegral n *) <$> duration tf of
+    Nothing -> Nothing
+    Just y -> Just (x + y)
