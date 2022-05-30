@@ -41,37 +41,37 @@ duration = measuring diffUTCTime
 
 -- | An 'Event' is something that happens for a period of time.
 --
--- > type Event = Layers UTCTime
-type Event = Layers UTCTime (Sum Int)
+-- > type Event n = Layers UTCTime (Sum n)
+type Event n = Layers UTCTime (Sum n)
 
-event :: Timeframe -> Event
+event :: (Num n) => Timeframe -> Event n
 event = (`Layers.singleton` 1)
 
-newtype Calendar ev = Calendar {getCalendar :: Map ev Event}
+newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
   deriving (Eq, Ord, Show, Typeable)
 
-instance (Ord ev) => Semigroup (Calendar ev) where
+instance (Ord ev, Num n) => Semigroup (Calendar ev n) where
   Calendar a <> Calendar b = Calendar (Map.unionWith (<>) a b)
 
-instance (Ord ev) => Monoid (Calendar ev) where
+instance (Ord ev, Num n) => Monoid (Calendar ev n) where
   mempty = Calendar mempty
 
-singleton :: (Ord ev) => ev -> Event -> Calendar ev
+singleton :: (Ord ev, Num n) => ev -> Event n -> Calendar ev n
 singleton ev cvg = Calendar (Map.singleton ev cvg)
 
-calendar :: (Ord ev) => ev -> Timeframe -> Calendar ev
+calendar :: (Ord ev, Num n) => ev -> Timeframe -> Calendar ev n
 calendar ev tf = singleton ev (Layers.singleton tf 1)
 
-addEvent :: (Ord ev) => ev -> Event -> Calendar ev -> Calendar ev
+addEvent :: (Ord ev, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
 addEvent ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
 
-totalDuration :: (Ord ev) => ev -> Calendar ev -> Maybe NominalDiffTime
+totalDuration :: forall ev n. (Ord ev, Real n) => ev -> Calendar ev n -> Maybe NominalDiffTime
 totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
   Just is -> foldr f (Just 0) (Layers.toList is)
  where
-  f :: (Timeframe, Sum Int) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
+  f :: (Timeframe, Sum n) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
   f _ Nothing = Nothing
-  f (tf, Sum n) (Just x) = case (fromIntegral n *) <$> duration tf of
+  f (tf, Sum n) (Just x) = case (realToFrac n *) <$> duration tf of
     Nothing -> Nothing
     Just y -> Just (x + y)

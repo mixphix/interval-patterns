@@ -1,13 +1,13 @@
 cabal-version: 3.0
 name: interval-patterns
-version: 0.1.0.0
+version: 0.2.0.0
 author: Melanie Brown
 description: A library for easy manipulation of intervals according to their overlap.
 maintainer: brown.m@pm.me
 license: BSD-3-Clause
 license-file: LICENSE
-homepage: https://github.com/cigsender/interval-patterns
-bug-reports: https://github.com/cigsender/interval-patterns/issues
+homepage: https://github.com/mixphix/interval-patterns
+bug-reports: https://github.com/mixphix/interval-patterns/issues
 extra-source-files: CHANGELOG.md
 copyright: 2022 Melanie Brown
 
