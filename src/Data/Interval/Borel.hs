@@ -8,6 +8,7 @@ module Data.Interval.Borel (
   insert,
   whole,
   cutout,
+  clip,
   member,
   notMember,
   union,

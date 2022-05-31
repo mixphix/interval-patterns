@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.2.0.1 - 2022-05-30
+
+* export `clip` from `Data.Interval.Borel`
+
 ## 0.2.0.0 - 2022-05-30
 
 * generalize `Layers` to arbitrary `Num` types and `Calendar` to arbitrary `Real` types
