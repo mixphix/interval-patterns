@@ -11,6 +11,7 @@
 * `Data.Interval.isSubsetOf`
 * `Data.Interval.Borel.isSubsetOf`
 * `Data.Interval.Layers.difference`
+* `Data.Interval.Layers.clip`
 * `Data.Calendar.happeningAt`
 
 ## 0.2.0.1 - 2022-05-30

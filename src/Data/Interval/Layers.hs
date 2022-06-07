@@ -11,6 +11,7 @@ module Data.Interval.Layers (
   remove,
   baseline,
   difference,
+  clip,
 
   -- ** Helper functions
   nestings,
@@ -76,7 +77,7 @@ insert ::
   y ->
   Layers x y ->
   Layers x y
-insert ix y = mappend (singleton ix y)
+insert ix y = (<>) (singleton ix y)
 
 -- | Take away a thickness over a given base from the 'Layers'.
 remove :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
@@ -90,6 +91,17 @@ baseline = insert Whole
 difference :: (Ord x, Group y) => Layers x y -> Layers x y -> Layers x y
 difference layers (Layers s) =
   foldr (uncurry (flip remove)) layers (Map.toAscList s)
+
+-- | Restrict the range of the 'Layers' to the given 'Interval'.
+clip :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
+clip ix (Layers s) =
+  Map.foldlWithKey'
+    ( \acc jx y -> case I.intersect ix jx of
+        Nothing -> acc
+        Just x -> insert x y acc
+    )
+    empty
+    s
 
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
