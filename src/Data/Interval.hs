@@ -798,6 +798,16 @@ unionsAsc = \case
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
 --
 -- @
+--
+-- Note that infinitely-open intervals will return the points at infinity
+-- toward which they are infinite in their result:
+--
+-- @
+--
+-- >>> complement (Levitate 3 :<->: Top)
+-- Just (Two (Bottom :|-|: Levitate 3) (Top :|-|: Top))
+--
+-- @
 complement :: forall x. (Ord x) => Interval x -> Maybe (OneOrTwo (Interval x))
 complement = \case
   Whole -> Nothing
