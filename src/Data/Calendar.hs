@@ -10,6 +10,7 @@ module Data.Calendar (
   (!?),
   (!),
   Data.Calendar.toList,
+  happeningAt,
   coalesce,
   totalDuration,
 ) where
@@ -72,6 +73,11 @@ Calendar c ! ev = c Map.!? ev ?: mempty
 
 toList :: (Ord ev, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
 toList (Calendar c) = fmap getSum <<$>> Layers.toList <<$>> Map.assocs c
+
+-- | What any how many events are happening at the given 'UTCTime' on this 'Calendar'?
+happeningAt :: (Ord ev, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
+happeningAt time (Data.Calendar.toList -> evs) =
+  [(ev, n) | (ev, ns) <- evs, (_, n) <- filter (within time . fst) ns]
 
 -- | Consider every kind of event the same, and only observe the overall 'Layers'.
 coalesce :: (Ord ev, Num n) => Calendar ev n -> Event n
