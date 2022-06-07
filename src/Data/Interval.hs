@@ -69,6 +69,7 @@ module Data.Interval (
   measure,
   measuring,
   hausdorff,
+  isSubsetOf,
 ) where
 
 import Algebra.Lattice.Levitated
@@ -967,3 +968,20 @@ hausdorff i1 i2 = case adjacency i1 i2 of
 -- For the open interval, simply write @'open' (x '+/-' y)@.
 (+/-) :: (Ord x, Num x) => x -> x -> Interval x
 m +/- r = m - r :||: m + r
+
+-- | Full containment.
+isSubsetOf :: (Ord x) => Interval x -> Interval x -> Bool
+isSubsetOf i j = case adjacency i j of
+  Before{} -> False
+  Meets{} -> False
+  Overlaps{} -> False
+  Starts{} -> True
+  During{} -> True
+  Finishes{} -> True
+  Identical{} -> True
+  FinishedBy{} -> False
+  Contains{} -> False
+  StartedBy{} -> False
+  OverlappedBy{} -> False
+  MetBy{} -> False
+  After{} -> False
