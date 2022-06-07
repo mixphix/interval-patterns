@@ -19,6 +19,7 @@ module Data.Interval.Borel (
   intersection,
   intersections,
   hull,
+  isSubsetOf,
 ) where
 
 import Algebra.Heyting
@@ -165,3 +166,6 @@ hull :: (Ord x) => Borel x -> Maybe (Interval x)
 hull (Borel is)
   | Set.null is = Nothing
   | otherwise = Just $ uncurry (foldr I.hull) (Set.deleteFindMin is)
+
+isSubsetOf :: (Ord x) => Borel x -> Borel x -> Bool
+isSubsetOf is js = difference is js == mempty
