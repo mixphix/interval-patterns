@@ -421,7 +421,7 @@ pattern l :|>: u <- -- Levitate l :|->: Levitate u
           sup = Levitate (max b1 b2)
        in case compare inf sup of
             EQ -> Min inf :|--|: Max sup
-            _ -> Inf inf :<--|: Max sup
+            _ -> Min inf :|-->: Sup sup
 
 -- | A pattern synonym matching finite closed intervals.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
