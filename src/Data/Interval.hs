@@ -29,6 +29,7 @@ module Data.Interval (
   pattern (:|>:),
   pattern (:||:),
   pattern Whole,
+  (+/-),
   bounds,
   lower,
   lowerBound,
@@ -67,7 +68,6 @@ module Data.Interval (
   measure,
   measuring,
   hausdorff,
-  (+/-),
 ) where
 
 import Algebra.Lattice.Levitated
