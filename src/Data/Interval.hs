@@ -550,79 +550,49 @@ hulls (i :| j : is) = hulls $ hull i j :| is
 
 -- | Test whether a point is contained in the interval.
 within :: (Ord x) => x -> Interval x -> Bool
-within (Levitate -> x) = \case
-  l :<->: u -> l < x && x < u
-  l :<-|: u -> l < x && x <= u
-  l :|->: u -> l <= x && x < u
-  l :|-|: u -> l <= x && x <= u
+within (Levitate -> x) (l :---: u) = l < x && x < u
 
 -- | Create the closed-closed interval at a given point.
 point :: (Ord x) => x -> Interval x
 point = join (:||:)
 
+-- | Get the infimum of an interval, weakening if necessary.
+iinf :: (Ord x) => Interval x -> Bound Infimum (Levitated x)
+iinf (x :---: _) = Inf x
+
 -- | Get the minimum of an interval, if it exists.
 imin :: (Ord x) => Interval x -> Maybe (Bound Minimum (Levitated x))
 imin = \case
-  (_ :<-->: _) -> Nothing
-  (_ :<--|: _) -> Nothing
   (x :|-->: _) -> Just x
   (x :|--|: _) -> Just x
-
--- | Get the infimum of an interval, weakening if necessary.
-iinf :: (Ord x) => Interval x -> Bound Infimum (Levitated x)
-iinf = \case
-  (x :<->: _) -> Inf x
-  (x :<-|: _) -> Inf x
-  (x :|->: _) -> Inf x
-  (x :|-|: _) -> Inf x
-
--- | Get the supremum of an interval, weakening if necessary.
-isup :: (Ord x) => Interval x -> Bound Supremum (Levitated x)
-isup = \case
-  (_ :<->: x) -> Sup x
-  (_ :<-|: x) -> Sup x
-  (_ :|->: x) -> Sup x
-  (_ :|-|: x) -> Sup x
+  _ -> Nothing
 
 -- | Get the maximum of an interval if it exists.
 imax :: (Ord x) => Interval x -> Maybe (Bound Maximum (Levitated x))
 imax = \case
-  (_ :<-->: _) -> Nothing
   (_ :<--|: x) -> Just x
-  (_ :|-->: _) -> Nothing
   (_ :|--|: x) -> Just x
+  _ -> Nothing
+
+-- | Get the supremum of an interval, weakening if necessary.
+isup :: (Ord x) => Interval x -> Bound Supremum (Levitated x)
+isup (_ :---: x) = Sup x
 
 -- | Open both bounds of the given interval.
 open :: (Ord x) => Interval x -> Interval x
-open = \case
-  l :<->: u -> l :<->: u
-  l :<-|: u -> l :<->: u
-  l :|->: u -> l :<->: u
-  l :|-|: u -> l :<->: u
+open (l :---: u) = l :<->: u
 
 -- | Close both bounds of the given interval.
 close :: (Ord x) => Interval x -> Interval x
-close = \case
-  l :<->: u -> l :|-|: u
-  l :<-|: u -> l :|-|: u
-  l :|->: u -> l :|-|: u
-  l :|-|: u -> l :|-|: u
+close (l :---: u) = l :|-|: u
 
 -- | Make the interval open-closed, leaving the endpoints unchanged.
 openclosed :: (Ord x) => Interval x -> Interval x
-openclosed = \case
-  l :<->: u -> l :<->: u
-  l :<-|: u -> l :<->: u
-  l :|->: u -> l :<->: u
-  l :|-|: u -> l :<->: u
+openclosed (l :---: u) = l :<-|: u
 
 -- | Make the interval closed-open, leaving the endpoints unchanged.
 closedopen :: (Ord x) => Interval x -> Interval x
-closedopen = \case
-  l :<->: u -> l :|-|: u
-  l :<-|: u -> l :|-|: u
-  l :|->: u -> l :|-|: u
-  l :|-|: u -> l :|-|: u
+closedopen (l :---: u) = l :|->: u
 
 -- | Make the lower bound open, leaving the endpoints unchanged.
 openLower :: (Ord x) => Interval x -> Interval x
@@ -939,14 +909,8 @@ measure = measuring subtract
 measuring ::
   forall y x. (Ord x, Num y) => (x -> x -> y) -> Interval x -> Maybe y
 measuring f = \case
-  Levitate l :|-|: Levitate u -> Just (f l u)
-  Levitate l :|->: Levitate u -> Just (f l u)
-  Levitate l :<-|: Levitate u -> Just (f l u)
-  Levitate l :<->: Levitate u -> Just (f l u)
-  l :|-|: u -> if l == u then Just 0 else Nothing
-  l :|->: u -> if l == u then Just 0 else Nothing
-  l :<-|: u -> if l == u then Just 0 else Nothing
-  l :<->: u -> if l == u then Just 0 else Nothing
+  Levitate l :---: Levitate u -> Just (f l u)
+  l :---: u -> if l == u then Just 0 else Nothing
 
 -- | Get the distance between two intervals, or 0 if they adjacency.
 --

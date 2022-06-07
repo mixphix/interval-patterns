@@ -5,6 +5,7 @@
 * new pattern synonym `(:---:) :: (Ord x) => Levitated x -> Levitated x -> Interval x`
   * only works as a pattern; cannot be used as an expression
   * disregards the open/closedness of the boundary
+* fix `openclosed` and `closedopen`
 
 ## 0.2.0.1 - 2022-05-30
 
