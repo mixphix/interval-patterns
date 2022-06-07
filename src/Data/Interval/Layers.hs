@@ -10,6 +10,7 @@ module Data.Interval.Layers (
   thickest,
   remove,
   baseline,
+  difference,
 
   -- ** Helper functions
   nestings,
@@ -68,6 +69,28 @@ toList (Layers s) = Map.toList s
 squash :: (Ord x) => Layers x y -> Borel x
 squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 
+-- | @insert ix y l@ draws over @l@ a rectangle with base @ix@ of thickness @y@.
+insert ::
+  (Ord x, Semigroup y) =>
+  Interval x ->
+  y ->
+  Layers x y ->
+  Layers x y
+insert ix y = mappend (singleton ix y)
+
+-- | Take away a thickness over a given base from the 'Layers'.
+remove :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
+remove y ix = insert ix (invert y)
+
+-- | Add the given thickness to every point.
+baseline :: (Ord x, Semigroup y) => y -> Layers x y -> Layers x y
+baseline = insert Whole
+
+-- | "Excavate" the second argument from the first.
+difference :: (Ord x, Group y) => Layers x y -> Layers x y -> Layers x y
+difference layers (Layers s) =
+  foldr (uncurry (flip remove)) layers (Map.toAscList s)
+
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
 thickness x (Layers s) = case Map.lookupLE (x :<>: x) s of
@@ -84,15 +107,6 @@ thickest (Layers s) =
     )
     Nothing
     s
-
--- | @insert ix y l@ draws over @l@ a rectangle with base @ix@ of thickness @y@.
-insert ::
-  (Ord x, Semigroup y) =>
-  Interval x ->
-  y ->
-  Layers x y ->
-  Layers x y
-insert ix y = mappend (singleton ix y)
 
 nestings ::
   (Ord x, Semigroup y) =>
@@ -148,11 +162,3 @@ nestingsAsc = \case
     MetBy i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
     After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
   x -> x
-
--- | Take away a thickness over a given base from the 'Layers'.
-remove :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
-remove y ix = insert ix (invert y)
-
--- | Add the given thickness to every point.
-baseline :: (Ord x, Semigroup y) => y -> Layers x y -> Layers x y
-baseline = insert Whole

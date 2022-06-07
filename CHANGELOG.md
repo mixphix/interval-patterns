@@ -8,6 +8,7 @@
 * fix `openclosed` and `closedopen`
 * rename `imapS -> imapLev` and `itraverseS -> itraverseLev` following `Suspension -> Levitated`
 * `(...)` as a value-level analogue to `interval`
+* `Data.Interval.Layers.difference`
 
 ## 0.2.0.1 - 2022-05-30
 
