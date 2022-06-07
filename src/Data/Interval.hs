@@ -23,6 +23,7 @@ module Data.Interval (
   pattern (:<-|:),
   pattern (:|->:),
   pattern (:|-|:),
+  pattern (:---:),
   pattern (:<>:),
   pattern (:<|:),
   pattern (:|>:),
@@ -371,6 +372,11 @@ pattern l :|-|: u <-
     b1 :|-|: b2 = Min (min b1 b2) :|--|: Max (max b1 b2)
 
 {-# COMPLETE (:<->:), (:<-|:), (:|->:), (:|-|:) #-}
+
+pattern (:---:) :: forall x. (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern l :---: u <- (bounds -> (SomeBound (unBound -> l), SomeBound (unBound -> u)))
+
+{-# COMPLETE (:---:) #-}
 
 infix 5 :<>:
 

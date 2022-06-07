@@ -1,5 +1,11 @@
 # Revision history for interval-patterns
 
+## 0.3.0.0 - 2022-06-07
+
+* new pattern synonym `(:---:) :: (Ord x) => Levitated x -> Levitated x -> Interval x`
+  * only works as a pattern; cannot be used as an expression
+  * disregards the open/closedness of the boundary
+
 ## 0.2.0.1 - 2022-05-30
 
 * export `clip` from `Data.Interval.Borel`
