@@ -16,9 +16,9 @@ module Data.Interval (
   oppose,
   Interval (..),
   imap,
-  imapS,
+  imapLev,
   itraverse,
-  itraverseS,
+  itraverseLev,
   pattern (:<->:),
   pattern (:<-|:),
   pattern (:|->:),
@@ -282,12 +282,12 @@ imap f = \case
   l :|-|: u -> fmap f l :|-|: fmap f u
 
 -- | Same as 'imap' but on the 'Levitated' of the underlying type.
-imapS ::
+imapLev ::
   (Ord x, Ord y) =>
   (Levitated x -> Levitated y) ->
   Interval x ->
   Interval y
-imapS f = \case
+imapLev f = \case
   l :<->: u -> f l :<->: f u
   l :|->: u -> f l :|->: f u
   l :<-|: u -> f l :<-|: f u
@@ -307,12 +307,12 @@ itraverse f = \case
   l :|-|: u -> liftA2 (:|-|:) (traverse f l) (traverse f u)
 
 -- | Same as 'itraverse' but on the 'Levitated' of the underlying type.
-itraverseS ::
+itraverseLev ::
   (Ord x, Ord y, Applicative f) =>
   (Levitated x -> f (Levitated y)) ->
   Interval x ->
   f (Interval y)
-itraverseS f = \case
+itraverseLev f = \case
   l :<->: u -> liftA2 (:<->:) (f l) (f u)
   l :|->: u -> liftA2 (:|->:) (f l) (f u)
   l :<-|: u -> liftA2 (:<-|:) (f l) (f u)

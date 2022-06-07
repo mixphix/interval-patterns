@@ -6,6 +6,7 @@
   * only works as a pattern; cannot be used as an expression
   * disregards the open/closedness of the boundary
 * fix `openclosed` and `closedopen`
+* rename `imapS -> imapLev` and `itraverseS -> itraverseLev` following `Suspension -> Levitated`
 
 ## 0.2.0.1 - 2022-05-30
 
