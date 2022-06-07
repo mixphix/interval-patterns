@@ -30,6 +30,7 @@ module Data.Interval (
   pattern (:||:),
   pattern Whole,
   (+/-),
+  (...),
   bounds,
   lower,
   lowerBound,
@@ -489,6 +490,26 @@ interval (SomeBound b1) (SomeBound b2) = case (b1, b2) of
   (Max u, Min l) -> l :|-|: u
   (Max u, Inf l) -> l :<-|: u
   _ -> error "cannot make an interval with the given bounds"
+
+-- | Given limits and 'Extremum's, try to make an interval.
+(...) ::
+  (Ord x) =>
+  (Levitated x, Extremum) ->
+  (Levitated x, Extremum) ->
+  Interval x
+(x, b1) ... (y, b2) = case (b1, b2) of
+  (Minimum, Supremum) -> l :|->: u
+  (Minimum, Maximum) -> l :|-|: u
+  (Infimum, Supremum) -> l :<->: u
+  (Infimum, Maximum) -> l :<-|: u
+  (Supremum, Minimum) -> l :|->: u
+  (Supremum, Infimum) -> l :<->: u
+  (Maximum, Minimum) -> l :|-|: u
+  (Maximum, Infimum) -> l :<-|: u
+  _ -> error "cannot make an interval with the given bounds"
+ where
+  l = min x y
+  u = max x y
 
 -- | According to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra),
