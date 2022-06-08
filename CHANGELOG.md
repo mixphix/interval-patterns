@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.3.0.1 - 2022-06-08
+
+* expose `Data.Calendar` lol
+
 ## 0.3.0.0 - 2022-06-08
 
 * new pattern synonym `(:---:) :: (Ord x) => Levitated x -> Levitated x -> Interval x`

@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: interval-patterns
-version: 0.3.0.0
+version: 0.3.0.1
 author: Melanie Brown
 description: A library for easy manipulation of intervals according to their overlap.
 maintainer: brown.m@pm.me
@@ -73,6 +73,7 @@ library
     Data.Interval.Borel
     Data.OneOrTwo
     Data.Timeframe
+    Data.Calendar
 
 test-suite tests
   import: interval-patterns
