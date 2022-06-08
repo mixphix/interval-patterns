@@ -1,6 +1,6 @@
 # Revision history for interval-patterns
 
-## 0.3.0.0 - 2022-06-07
+## 0.3.0.0 - 2022-06-08
 
 * new pattern synonym `(:---:) :: (Ord x) => Levitated x -> Levitated x -> Interval x`
   * only works as a pattern; cannot be used as an expression
