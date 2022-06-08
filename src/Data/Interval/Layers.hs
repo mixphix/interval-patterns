@@ -12,14 +12,16 @@ module Data.Interval.Layers (
   baseline,
   difference,
   clip,
+  toStepFunction,
 
   -- ** Helper functions
   nestings,
   nestingsAsc,
 ) where
 
+import Algebra.Lattice.Levitated
 import Data.Group (Group (..))
-import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:<>:))
+import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:---:), pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
@@ -119,6 +121,20 @@ thickest (Layers s) =
     )
     Nothing
     s
+
+-- | Convert the 'Layers' into a list of beginning-points and heights,
+-- that define a step function piecewise.
+toStepFunction :: (Ord x, Monoid y) => Layers x y -> [(Levitated x, y)]
+toStepFunction s = g (Data.Interval.Layers.toList $ baseline mempty s)
+ where
+  g [(il :---: iu, iy), (j@(jl :---: Top), jy)]
+    | iu == jl = (il, iy) : g [(j, jy)]
+    | otherwise = (il, iy) : (iu, mempty) : g [(j, jy)]
+  g ((il :---: iu, iy) : (j@(jl :---: _), jy) : is)
+    | iu == jl = (il, iy) : g ((j, jy) : is)
+    | otherwise = (il, iy) : (iu, mempty) : g ((j, jy) : is)
+  g [] = []
+  g [(il :---: iu, iy)] = [(il, iy), (iu, mempty)]
 
 nestings ::
   (Ord x, Semigroup y) =>
