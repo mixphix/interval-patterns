@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.3.1.0 - 2022-07
+
+* re-export `OneOrTwo` from `Data.Interval`
+
 ## 0.3.0.1 - 2022-06-08
 
 * expose `Data.Calendar` lol

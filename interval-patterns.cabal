@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: interval-patterns
-version: 0.3.0.1
+version: 0.3.1.0
 author: Melanie Brown
 description: A library for easy manipulation of intervals according to their overlap.
 maintainer: brown.m@pm.me

@@ -70,6 +70,7 @@ module Data.Interval (
   measuring,
   hausdorff,
   isSubsetOf,
+  OneOrTwo (..),
 ) where
 
 import Algebra.Lattice.Levitated
