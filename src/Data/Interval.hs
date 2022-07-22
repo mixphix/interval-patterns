@@ -782,17 +782,17 @@ union i1 i2 = case adjacency i1 i2 of
   Before i j
     | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
     | otherwise -> Two i j
-  Meets i j k -> One $ hulls (k :| [hull i j])
-  Overlaps i j k -> One $ hulls (i :| [j, k])
-  Starts i j -> One $ hulls (i :| [j])
-  During i j k -> One $ hulls (i :| [j, k])
-  Finishes i j -> One $ hulls (i :| [j])
+  Meets i _ k -> One $ hull i k
+  Overlaps i _ k -> One $ hull i k
+  Starts i j -> One $ hull i j
+  During i _ k -> One $ hull i k
+  Finishes i j -> One $ hull i j
   Identical i -> One i
-  FinishedBy i j -> One $ hulls (i :| [j])
-  Contains i j k -> One $ hulls (i :| [j, k])
-  StartedBy i j -> One $ hulls (i :| [j])
-  OverlappedBy i j k -> One $ hulls (i :| [j, k])
-  MetBy i j k -> One $ hulls (k :| [hull i j])
+  FinishedBy i j -> One $ hull i j
+  Contains i _ k -> One $ hull i k
+  StartedBy i j -> One $ hull i j
+  OverlappedBy i _ k -> One $ hull i k
+  MetBy i _ k -> One $ hull i k
   After i j
     | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
     | otherwise -> Two i j
