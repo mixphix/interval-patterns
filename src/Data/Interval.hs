@@ -183,8 +183,8 @@ instance Bounding Maximum where
 -- - infima and minima are both lesser than suprema and maxima
 compareBounds ::
   (Ord x) =>
-  Bound ext1 (Levitated x) ->
-  Bound ext2 (Levitated x) ->
+  Bound ext1 x ->
+  Bound ext2 x ->
   Ordering
 compareBounds (Min l) = \case
   Min ll -> compare l ll
