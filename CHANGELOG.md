@@ -1,5 +1,10 @@
 # Revision history for interval-patterns
 
+## Upcoming
+
+* better implementation of `unions`
+* removed `compareBounds`' forced restriction to `Levitated`
+
 ## 0.3.1.0 - 2022-07
 
 * re-export `OneOrTwo` from `Data.Interval`
