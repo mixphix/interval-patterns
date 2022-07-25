@@ -1,9 +1,11 @@
 # Revision history for interval-patterns
 
-## Upcoming
+## 0.4.0.0 - Upcoming
 
 * better implementation of `unions`
 * removed `compareBounds`' forced restriction to `Levitated`
+* `instance (Ord x, Data x) => Data (Interval x)`
+* `instance (Typeable x) => Typeable (Interval x)`
 
 ## 0.3.1.0 - 2022-07
 

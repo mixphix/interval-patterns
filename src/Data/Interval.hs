@@ -74,7 +74,7 @@ module Data.Interval (
 ) where
 
 import Algebra.Lattice.Levitated
-import Data.Data (Data)
+import Data.Data
 import Data.OneOrTwo (OneOrTwo (..))
 import GHC.Show qualified (show)
 
@@ -263,64 +263,6 @@ data Interval x where
     !(Bound Maximum (Levitated x)) ->
     Interval x
 
-deriving instance (Ord x) => Eq (Interval x)
-
-instance (Ord x, Show x) => Show (Interval x) where
-  show = \case
-    l :<->: u -> "(" <> show l <> " :<->: " <> show u <> ")"
-    l :|->: u -> "(" <> show l <> " :|->: " <> show u <> ")"
-    l :<-|: u -> "(" <> show l <> " :<-|: " <> show u <> ")"
-    l :|-|: u -> "(" <> show l <> " :|-|: " <> show u <> ")"
-
-instance (Ord x) => Ord (Interval x) where
-  compare i1 i2 = on compare lower i1 i2 <> on compare upper i1 i2
-
--- | Since the 'Ord' constraints on the constructors for 'Interval'
--- prevent it from being a 'Functor', this will have to suffice.
-imap :: (Ord x, Ord y) => (x -> y) -> Interval x -> Interval y
-imap f = \case
-  l :<->: u -> fmap f l :<->: fmap f u
-  l :|->: u -> fmap f l :|->: fmap f u
-  l :<-|: u -> fmap f l :<-|: fmap f u
-  l :|-|: u -> fmap f l :|-|: fmap f u
-
--- | Same as 'imap' but on the 'Levitated' of the underlying type.
-imapLev ::
-  (Ord x, Ord y) =>
-  (Levitated x -> Levitated y) ->
-  Interval x ->
-  Interval y
-imapLev f = \case
-  l :<->: u -> f l :<->: f u
-  l :|->: u -> f l :|->: f u
-  l :<-|: u -> f l :<-|: f u
-  l :|-|: u -> f l :|-|: f u
-
--- | Since the 'Ord' constraints on the constructors for 'Interval'
--- prevent it from being 'Traversable', this will have to suffice.
-itraverse ::
-  (Ord x, Ord y, Applicative f) =>
-  (x -> f y) ->
-  Interval x ->
-  f (Interval y)
-itraverse f = \case
-  l :<->: u -> liftA2 (:<->:) (traverse f l) (traverse f u)
-  l :|->: u -> liftA2 (:|->:) (traverse f l) (traverse f u)
-  l :<-|: u -> liftA2 (:<-|:) (traverse f l) (traverse f u)
-  l :|-|: u -> liftA2 (:|-|:) (traverse f l) (traverse f u)
-
--- | Same as 'itraverse' but on the 'Levitated' of the underlying type.
-itraverseLev ::
-  (Ord x, Ord y, Applicative f) =>
-  (Levitated x -> f (Levitated y)) ->
-  Interval x ->
-  f (Interval y)
-itraverseLev f = \case
-  l :<->: u -> liftA2 (:<->:) (f l) (f u)
-  l :|->: u -> liftA2 (:|->:) (f l) (f u)
-  l :<-|: u -> liftA2 (:<-|:) (f l) (f u)
-  l :|-|: u -> liftA2 (:|-|:) (f l) (f u)
-
 infix 5 :<->:
 
 infix 5 :<-|:
@@ -435,6 +377,127 @@ pattern l :||: u <- -- Levitate l :|-|: Levitate u
 -- | The whole interval.
 pattern Whole :: (Ord x) => Interval x
 pattern Whole = Bottom :|-|: Top
+
+deriving instance (Ord x) => Eq (Interval x)
+
+instance (Ord x, Show x) => Show (Interval x) where
+  show = \case
+    l :<->: u -> "(" <> show l <> " :<->: " <> show u <> ")"
+    l :|->: u -> "(" <> show l <> " :|->: " <> show u <> ")"
+    l :<-|: u -> "(" <> show l <> " :<-|: " <> show u <> ")"
+    l :|-|: u -> "(" <> show l <> " :|-|: " <> show u <> ")"
+
+instance (Ord x) => Ord (Interval x) where
+  compare i1 i2 = on compare lower i1 i2 <> on compare upper i1 i2
+
+instance (Ord x, Data x) => Data (Interval x) where
+  gfoldl (<^>) gpure = \case
+    l :<->: u -> gpure (:<->:) <^> l <^> u
+    l :|->: u -> gpure (:|->:) <^> l <^> u
+    l :<-|: u -> gpure (:<-|:) <^> l <^> u
+    l :|-|: u -> gpure (:|-|:) <^> l <^> u
+  toConstr = \case
+    _ :<->: _ -> intervalOpenOpenConstr
+    _ :|->: _ -> intervalClosedOpenConstr
+    _ :<-|: _ -> intervalOpenClosedConstr
+    _ :|-|: _ -> intervalClosedClosedConstr
+  dataTypeOf _ = intervalDataType
+  gunfold k gpure constr = case constrIndex constr of
+    0 -> k (k (gpure (:<->:)))
+    1 -> k (k (gpure (:|->:)))
+    2 -> k (k (gpure (:<-|:)))
+    3 -> k (k (gpure (:|-|:)))
+    _ -> error "gunfold"
+
+intervalOpenOpenConstr :: Constr
+intervalOpenOpenConstr =
+  mkConstr
+    intervalDataType
+    ":<--->:"
+    []
+    Infix
+
+intervalClosedOpenConstr :: Constr
+intervalClosedOpenConstr =
+  mkConstr
+    intervalDataType
+    ":|--->:"
+    []
+    Infix
+
+intervalOpenClosedConstr :: Constr
+intervalOpenClosedConstr =
+  mkConstr
+    intervalDataType
+    ":<---|:"
+    []
+    Infix
+
+intervalClosedClosedConstr :: Constr
+intervalClosedClosedConstr =
+  mkConstr
+    intervalDataType
+    ":|---|:"
+    []
+    Infix
+
+intervalDataType :: DataType
+intervalDataType =
+  mkDataType
+    "Data.Interval.Interval"
+    [ intervalOpenOpenConstr
+    , intervalClosedOpenConstr
+    , intervalOpenClosedConstr
+    , intervalClosedClosedConstr
+    ]
+
+deriving instance Typeable x => Typeable (Interval x)
+
+-- | Since the 'Ord' constraints on the constructors for 'Interval'
+-- prevent it from being a 'Functor', this will have to suffice.
+imap :: (Ord x, Ord y) => (x -> y) -> Interval x -> Interval y
+imap f = \case
+  l :<->: u -> fmap f l :<->: fmap f u
+  l :|->: u -> fmap f l :|->: fmap f u
+  l :<-|: u -> fmap f l :<-|: fmap f u
+  l :|-|: u -> fmap f l :|-|: fmap f u
+
+-- | Same as 'imap' but on the 'Levitated' of the underlying type.
+imapLev ::
+  (Ord x, Ord y) =>
+  (Levitated x -> Levitated y) ->
+  Interval x ->
+  Interval y
+imapLev f = \case
+  l :<->: u -> f l :<->: f u
+  l :|->: u -> f l :|->: f u
+  l :<-|: u -> f l :<-|: f u
+  l :|-|: u -> f l :|-|: f u
+
+-- | Since the 'Ord' constraints on the constructors for 'Interval'
+-- prevent it from being 'Traversable', this will have to suffice.
+itraverse ::
+  (Ord x, Ord y, Applicative f) =>
+  (x -> f y) ->
+  Interval x ->
+  f (Interval y)
+itraverse f = \case
+  l :<->: u -> liftA2 (:<->:) (traverse f l) (traverse f u)
+  l :|->: u -> liftA2 (:|->:) (traverse f l) (traverse f u)
+  l :<-|: u -> liftA2 (:<-|:) (traverse f l) (traverse f u)
+  l :|-|: u -> liftA2 (:|-|:) (traverse f l) (traverse f u)
+
+-- | Same as 'itraverse' but on the 'Levitated' of the underlying type.
+itraverseLev ::
+  (Ord x, Ord y, Applicative f) =>
+  (Levitated x -> f (Levitated y)) ->
+  Interval x ->
+  f (Interval y)
+itraverseLev f = \case
+  l :<->: u -> liftA2 (:<->:) (f l) (f u)
+  l :|->: u -> liftA2 (:|->:) (f l) (f u)
+  l :<-|: u -> liftA2 (:<-|:) (f l) (f u)
+  l :|-|: u -> liftA2 (:|-|:) (f l) (f u)
 
 -- | Get the @(lower, upper)@ 'bounds' of an 'Interval'.
 --
