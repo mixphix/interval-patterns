@@ -77,6 +77,7 @@ import Algebra.Lattice.Levitated
 import Data.Data
 import Data.OneOrTwo (OneOrTwo (..))
 import GHC.Show qualified (show)
+import GHC.Generics hiding (Infix)
 
 -- | The kinds of extremum an interval can have.
 data Extremum
@@ -452,6 +453,20 @@ intervalDataType =
     ]
 
 deriving instance Typeable x => Typeable (Interval x)
+
+instance (Ord x, Generic x) => Generic (Interval x) where
+  type Rep (Interval x) = (Const (Levitated x, Extremum) :*: Const (Levitated x, Extremum))
+  from = \case
+    l :<->: u -> (Const (l, Infimum) :*: Const (u, Supremum))
+    l :|->: u -> (Const (l, Minimum) :*: Const (u, Supremum))
+    l :<-|: u -> (Const (l, Infimum) :*: Const (u, Maximum))
+    l :|-|: u -> (Const (l, Minimum) :*: Const (u, Maximum))
+  to = \case
+    (Const (l, Infimum) :*: Const (u, Supremum)) -> l :<->: u
+    (Const (l, Minimum) :*: Const (u, Supremum)) -> l :|->: u
+    (Const (l, Infimum) :*: Const (u, Maximum)) -> l :<-|: u
+    (Const (l, Minimum) :*: Const (u, Maximum)) -> l :|-|: u
+    _ -> error "GHC.Generics.to: invalid interval representation"
 
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
 -- prevent it from being a 'Functor', this will have to suffice.

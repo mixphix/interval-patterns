@@ -1,13 +1,12 @@
 # Revision history for interval-patterns
 
-## 0.4.0.0 - Upcoming
+## 0.4.0.0 - 2022-07-*
 
 * better implementation of `unions`
 * removed `compareBounds`' forced restriction to `Levitated`
-* `instance (Ord x, Data x) => Data (Interval x)`
-* `instance (Typeable x) => Typeable (Interval x)`
+* `Data`, `Typeable`, `Generic` instances for `Interval`
 
-## 0.3.1.0 - 2022-07
+## 0.3.1.0 - 2022-07-13
 
 * re-export `OneOrTwo` from `Data.Interval`
 
