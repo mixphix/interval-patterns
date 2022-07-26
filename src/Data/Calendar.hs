@@ -3,6 +3,7 @@ module Data.Calendar (
   Event,
   event,
   eventSize,
+  erlangs,
   Calendar (..),
   singleton,
   calendar,
@@ -15,6 +16,7 @@ module Data.Calendar (
   totalDuration,
 ) where
 
+import Data.Interval qualified as I
 import Data.Interval.Layers (Layers)
 import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict qualified as Map
@@ -36,6 +38,15 @@ event = (`Layers.singleton` 1)
 -- | Make an 'Event' with the given size from a 'Timeframe'.
 eventSize :: (Num n) => n -> Timeframe -> Event n
 eventSize n = (`Layers.singleton` Sum n)
+
+-- |
+-- Measure the carried load of an 'Event' over a given 'Timeframe'.
+-- In other words: how many copies of you would you need, in order to attend
+-- all of the simultaneous happenings over a given span (on average)?
+erlangs :: (Real n) => Timeframe -> Event n -> Maybe Rational
+erlangs ix e =
+  let diff = realToFrac <<$>> diffUTCTime
+   in liftA2 (/) (Layers.integrate diff (realToFrac . getSum) ix e) (I.measuring diff ix)
 
 -- | A 'Calendar' is a map from a given event type to durations.
 newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}

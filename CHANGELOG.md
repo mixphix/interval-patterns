@@ -4,6 +4,7 @@
 
 * New functions
   * `Data.Interval.Layers.integrate` for calculating areas
+  * `Data.Calendar.erlangs` for calculating carried load
   * `pile`, flipped synonym for `Data.Interval.Layers.insert`
   * rename `Data.Interval.Borel.cutout` to `remove`, flipped infix synonym `(\-)`
   * rename `Data.Interval.Borel.clip` to `truncate`, flipped infix synonym `(\=)`
