@@ -894,8 +894,8 @@ unions = unionsAsc . sort
 unionsAsc :: forall x. (Ord x) => [Interval x] -> [Interval x]
 unionsAsc = \case
   i : j : is -> case i `union` j of
-    One k -> unions (k : is)
-    _ -> i : unions (j : is)
+    One k -> unionsAsc (k : is)
+    _ -> i : unionsAsc (j : is)
   x -> x
 
 -- | Take the complement of the interval, as possibly 'OneOrTwo'.
