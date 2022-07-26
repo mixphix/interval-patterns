@@ -1033,6 +1033,9 @@ measure = measuring subtract
 -- >>> measuring min (-1 :<>: 1)
 -- Just (-1)
 --
+-- >>> measuring (*) (4 :<>: 6)
+-- Just 24
+--
 -- @
 measuring ::
   forall y x.
@@ -1042,7 +1045,9 @@ measuring ::
   Maybe y
 measuring f = \case
   Levitate l :---: Levitate u -> Just (f l u)
-  l :---: u -> if l == u then Just 0 else Nothing
+  l :---: u
+    | l == u -> Just 0
+    | otherwise -> Nothing
 
 -- | Get the distance between two intervals, or 0 if they adjacency.
 --
@@ -1057,11 +1062,11 @@ measuring f = \case
 -- @
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
-  Before i j ->
-    foldLevitated Nothing Just Nothing $ on (liftA2 (-)) unSomeBound (lower j) (upper i)
-  After i j ->
-    foldLevitated Nothing Just Nothing $ on (liftA2 (-)) unSomeBound (lower j) (upper i)
+  Before (_ :---: a) (b :---: _) -> levMaybe $ liftA2 (-) b a
+  After (_ :---: a) (b :---: _) -> levMaybe $ liftA2 (-) b a
   _ -> Just 0
+ where
+  levMaybe = foldLevitated Nothing Just Nothing
 
 -- | @m '+/-' r@ creates the closed interval centred at @m@ with radius @r@.
 --

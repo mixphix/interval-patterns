@@ -10,6 +10,7 @@
 * `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
 * fix `difference` in cases `MetBy` and `After`
 * fix regression in smart constructor ordering
+* add example to `measuring`
 
 ## 0.3.1.0 - 2022-07-13
 
