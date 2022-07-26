@@ -8,6 +8,7 @@
 * `Data`, `Typeable`, `Generic` instances for `Interval`
 * `Data` instance for `Adjacency`
 * `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
+* fix `difference` in cases `MetBy` and `After`
 
 ## 0.3.1.0 - 2022-07-13
 

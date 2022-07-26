@@ -946,6 +946,12 @@ complement = \case
 -- >>> difference (1 :<>: 4) (2 :||: 3)
 -- Just (Two (Levitate 1 :<->: Levitate 2) (Levitate 3 :<->: Levitate 4))
 --
+-- >>> difference (1 :|>: 4) (0 :||: 1)
+-- Just (One (Levitate 1 :<->: Levitate 4))
+--
+-- >>> difference (1 :<>: 4) (0 :||: 1)
+-- Just (One (Levitate 1 :<->: Levitate 4))
+--
 -- @
 difference ::
   forall x.
@@ -966,8 +972,8 @@ difference i1 i2 = case adjacency i1 i2 of
   Contains i _ k -> Just $ Two i k
   StartedBy _ j -> Just $ One j
   OverlappedBy _ _ k -> Just $ One k
-  MetBy i _ _ -> Just $ One i
-  After i _ -> Just $ One i
+  MetBy _ _ k -> Just $ One k
+  After _ j -> Just $ One j
 
 -- | Infix synonym for 'difference'
 (\\) ::
