@@ -3,6 +3,7 @@
 ## 0.4.0.0 - 2022-07-*
 
 * better implementation of `unions`
+* fix comparison order in `compareBounds`
 * removed `compareBounds`' forced restriction to `Levitated`
 * `Data`, `Typeable`, `Generic` instances for `Interval`
 

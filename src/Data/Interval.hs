@@ -87,8 +87,10 @@ data Extremum
   | Maximum
   deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Data, Typeable)
 
--- | The 'opposite' of an extremum is how it would be viewed
--- from the other "direction" of how it is currently.
+-- |
+-- The 'opposite' of an 'Extremum' is its complementary analogue:
+-- how the same point would be viewed from the complement of the
+-- interval to which it belongs.
 --
 -- c.f. 'opposeBound'.
 opposite :: Extremum -> Extremum
@@ -175,9 +177,16 @@ instance Bounding Maximum where
 
 -- | 'Bound's have special comparison rules for identical points.
 --
--- - minima are lesser than infima
--- - suprema are lesser than maxima
--- - infima and minima are both lesser than suprema and maxima
+-- >>> compareBounds (Min (Levitate 5)) (Max (Levitate 5))
+-- EQ
+-- >>> compareBounds (Inf (Levitate 5)) (Sup (Levitate 5))
+-- GT
+-- >>> compareBounds (Max (Levitate 5)) (Sup (Levitate 5))
+-- GT
+-- >>> compareBounds (Inf (Levitate 5)) (Min (Levitate 5))
+-- GT
+-- >>> compareBounds (Max (Levitate 5)) (Inf (Levitate 5))
+-- LT
 compareBounds ::
   (Ord x) =>
   Bound ext1 x ->
@@ -193,16 +202,16 @@ compareBounds (Inf l) = \case
   Inf ll -> compare l ll
   Sup u -> compare l u <> GT
   Max u -> compare l u <> GT
-compareBounds (Sup u) = \case
-  Min l -> compare l u <> LT
-  Inf l -> compare l u <> LT
-  Sup uu -> compare u uu
-  Max uu -> compare u uu <> LT
-compareBounds (Max u) = \case
-  Min l -> compare l u
-  Inf l -> compare l u <> LT
-  Sup uu -> compare u uu <> GT
-  Max uu -> compare u uu
+compareBounds (Sup l) = \case
+  Min u -> compare l u <> LT
+  Inf u -> compare l u <> LT
+  Sup uu -> compare l uu
+  Max uu -> compare l uu <> LT
+compareBounds (Max l) = \case
+  Min u -> compare l u
+  Inf u -> compare l u <> LT
+  Sup uu -> compare l uu <> GT
+  Max uu -> compare l uu
 
 data SomeBound x
   = forall ext.
