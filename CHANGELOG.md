@@ -7,6 +7,7 @@
 * removed `compareBounds`' forced restriction to `Levitated`
 * `Data`, `Typeable`, `Generic` instances for `Interval`
 * `Data` instance for `Adjacency`
+* `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
 
 ## 0.3.1.0 - 2022-07-13
 

@@ -663,26 +663,26 @@ point :: (Ord x) => x -> Interval x
 point = join (:||:)
 
 -- | Get the infimum of an interval, weakening if necessary.
-iinf :: (Ord x) => Interval x -> Bound Infimum (Levitated x)
-iinf (x :---: _) = Inf x
+iinf :: (Ord x) => Interval x -> Levitated x
+iinf (x :---: _) = x
 
 -- | Get the minimum of an interval, if it exists.
-imin :: (Ord x) => Interval x -> Maybe (Bound Minimum (Levitated x))
+imin :: (Ord x) => Interval x -> Maybe (Levitated x)
 imin = \case
-  (x :|-->: _) -> Just x
-  (x :|--|: _) -> Just x
+  (x :|->: _) -> Just x
+  (x :|-|: _) -> Just x
   _ -> Nothing
 
 -- | Get the maximum of an interval if it exists.
-imax :: (Ord x) => Interval x -> Maybe (Bound Maximum (Levitated x))
+imax :: (Ord x) => Interval x -> Maybe (Levitated x)
 imax = \case
-  (_ :<--|: x) -> Just x
-  (_ :|--|: x) -> Just x
+  (_ :<-|: x) -> Just x
+  (_ :|-|: x) -> Just x
   _ -> Nothing
 
 -- | Get the supremum of an interval, weakening if necessary.
-isup :: (Ord x) => Interval x -> Bound Supremum (Levitated x)
-isup (_ :---: x) = Sup x
+isup :: (Ord x) => Interval x -> Levitated x
+isup (_ :---: x) = x
 
 -- | Open both bounds of the given interval.
 open :: (Ord x) => Interval x -> Interval x
