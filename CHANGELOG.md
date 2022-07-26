@@ -2,22 +2,26 @@
 
 ## 0.4.0.0 - 2022-07-*
 
-* better implementation of `unions`
-* fix comparison order in `compareBounds`
-* removed `compareBounds`' forced restriction to `Levitated`
-* `Data`, `Typeable`, `Generic` instances for `Interval`
-* `Data` instance for `Adjacency`
-* `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
-* fix `difference` in cases `MetBy` and `After`
-* fix regression in smart constructor ordering
-* add example to `measuring`
-* improve implementation of `unionsAsc`
-* rename `Data.Interval.Borel.cutout` to `remove`, flipped infix synonym `(\-)`
-* rename `Data.Interval.Borel.clip` to `truncate`, flipped infix synonym `(\=)`
-* rename previous `Data.Interval.Layers.remove` to `dig`
-* new function `Data.Interval.Layers.remove` akin to `Borel`, flipped infix synonym `(\-)`
-* rename `Data.Interval.Layers.clip` to `truncate`, flipped infix synonym `(\=)`
-* `pile`, flipped synonym for `Data.Interval.Layers.insert`
+* New functions
+  * `Data.Interval.Layers.integrate` for calculating areas
+  * `pile`, flipped synonym for `Data.Interval.Layers.insert`
+  * rename `Data.Interval.Borel.cutout` to `remove`, flipped infix synonym `(\-)`
+  * rename `Data.Interval.Borel.clip` to `truncate`, flipped infix synonym `(\=)`
+  * rename previous `Data.Interval.Layers.remove` to `dig`
+  * new function `Data.Interval.Layers.remove` akin to `Borel`, flipped infix synonym `(\-)`
+  * rename `Data.Interval.Layers.clip` to `truncate`, flipped infix synonym `(\=)`
+* New instances
+  * `Data`, `Typeable`, `Generic` instances for `Interval`
+  * `Data` instance for `Adjacency`
+* Minor improvements
+  * better implementation of `unions`
+  * fix comparison order in `compareBounds`
+  * removed `compareBounds`' forced restriction to `Levitated`
+  * `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
+  * fix `difference` in cases `MetBy` and `After`
+  * fix regression in smart constructor ordering
+  * add example to `measuring`
+  * improve implementation of `unionsAsc`
 
 ## 0.3.1.0 - 2022-07-13
 

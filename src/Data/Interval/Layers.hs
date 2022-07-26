@@ -17,6 +17,7 @@ module Data.Interval.Layers (
   truncate,
   (\=),
   toStepFunction,
+  integrate,
 
   -- ** Helper functions
   nestings,
@@ -133,6 +134,25 @@ truncate ix (Layers s) =
 -- | Flipped infix version of 'truncate'.
 (\=) :: (Ord x, Semigroup y) => Layers x y -> Interval x -> Layers x y
 (\=) = flip truncate
+
+-- |
+-- @'integrate' diff hgt ix l@ calculates the area under the 'Interval' @ix@
+-- using the measure @diff@ of the interval multiplied by the height @hgt@
+-- of the layers over each sub-interval in the layers.
+integrate ::
+  (Ord x, Semigroup y, Num z) =>
+  (x -> x -> z) ->
+  (y -> z) ->
+  Interval x ->
+  Layers x y ->
+  Maybe z
+integrate diff hgt ix layers =
+  let Layers (Map.assocs -> s) = layers \= ix
+      f (jx, y) maccum = do
+        acc <- maccum
+        d <- I.measuring diff jx
+        pure $ acc + d * hgt y
+   in foldr f (Just 0) s
 
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
