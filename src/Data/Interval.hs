@@ -76,8 +76,8 @@ module Data.Interval (
 import Algebra.Lattice.Levitated
 import Data.Data
 import Data.OneOrTwo (OneOrTwo (..))
-import GHC.Show qualified (show)
 import GHC.Generics hiding (Infix)
+import GHC.Show qualified (show)
 
 -- | The kinds of extremum an interval can have.
 data Extremum
@@ -146,11 +146,7 @@ instance (Ord x) => Ord (Bound ext (Levitated x)) where
 
 -- | A type class for inverting 'Bound's.
 type Bounding :: Extremum -> Constraint
-class
-  ( Opposite (Opposite ext) ~ ext
-  ) =>
-  Bounding ext
-  where
+class (Opposite (Opposite ext) ~ ext) => Bounding ext where
   type Opposite ext :: Extremum
   bound :: x -> Bound ext x
 
@@ -909,7 +905,11 @@ unionsAsc = \case
 -- Just (Two (Bottom :|-|: Levitate 3) (Top :|-|: Top))
 --
 -- @
-complement :: forall x. (Ord x) => Interval x -> Maybe (OneOrTwo (Interval x))
+complement ::
+  forall x.
+  (Ord x) =>
+  Interval x ->
+  Maybe (OneOrTwo (Interval x))
 complement = \case
   Whole -> Nothing
   Bottom :|-|: u -> Just (One (u :<-|: Top))
@@ -1018,7 +1018,11 @@ measure = measuring subtract
 --
 -- @
 measuring ::
-  forall y x. (Ord x, Num y) => (x -> x -> y) -> Interval x -> Maybe y
+  forall y x.
+  (Ord x, Num y) =>
+  (x -> x -> y) ->
+  Interval x ->
+  Maybe y
 measuring f = \case
   Levitate l :---: Levitate u -> Just (f l u)
   l :---: u -> if l == u then Just 0 else Nothing
