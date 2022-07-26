@@ -615,7 +615,7 @@ data Adjacency x
   | OverlappedBy !(Interval x) !(Interval x) !(Interval x)
   | MetBy !(Interval x) !(Interval x) !(Interval x)
   | After !(Interval x) !(Interval x)
-  deriving (Eq, Ord, Show, Generic, Typeable)
+  deriving (Eq, Ord, Show, Generic, Typeable, Data)
 
 -- | The result of having compared the same two intervals in reverse order.
 converseAdjacency :: Adjacency x -> Adjacency x
