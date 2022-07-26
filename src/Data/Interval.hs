@@ -345,7 +345,7 @@ pattern l :<>: u <- -- Levitate l :<->: Levitate u
     b1 :<>: b2 =
       let inf = Levitate (min b1 b2)
           sup = Levitate (max b1 b2)
-       in case compare inf sup of
+       in case compare b1 b2 of
             EQ -> Min inf :|--|: Max sup
             _ -> Inf inf :<-->: Sup sup
 
@@ -357,9 +357,10 @@ pattern l :<|: u <- -- Levitate l :<-|: Levitate u
     b1 :<|: b2 =
       let inf = Levitate (min b1 b2)
           sup = Levitate (max b1 b2)
-       in case compare inf sup of
+       in case compare b1 b2 of
+            LT -> Inf inf :<--|: Max sup
             EQ -> Min inf :|--|: Max sup
-            _ -> Inf inf :<--|: Max sup
+            GT -> Min inf :|-->: Sup sup
 
 -- | A pattern synonym matching finite closed-open intervals.
 pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
@@ -369,9 +370,10 @@ pattern l :|>: u <- -- Levitate l :|->: Levitate u
     b1 :|>: b2 =
       let inf = Levitate (min b1 b2)
           sup = Levitate (max b1 b2)
-       in case compare inf sup of
+       in case compare b1 b2 of
+            LT -> Min inf :|-->: Sup sup
             EQ -> Min inf :|--|: Max sup
-            _ -> Min inf :|-->: Sup sup
+            GT -> Inf inf :<--|: Max sup
 
 -- | A pattern synonym matching finite closed intervals.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x

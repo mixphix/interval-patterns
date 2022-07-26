@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Main where
 
 import Algebra.Lattice.Levitated (Levitated (..))
@@ -13,14 +15,19 @@ import Data.Interval (
   pattern (:||:),
  )
 import Data.Interval.Borel qualified as Borel
+import GHC.TypeNats
 import Test.Hspec
 import Test.QuickCheck
+
+type family Ints (n :: Nat) x where
+  Ints 0 x = x
+  Ints n x = Int -> Ints (n - 1) x
 
 main :: IO ()
 main = hspec $ do
   describe "smart constructors" $ do
-    it "orients finite intervals" $ do
-      property @(Int -> Int -> _) $ \x y -> do
+    it "orient finite intervals" $ do
+      property @(Ints 2 _) $ \x y -> do
         if x <= y
           then do
             (x :<>: y) `shouldBe` (x :<>: y)
@@ -41,13 +48,13 @@ main = hspec $ do
             (Levitate x :<-|: Levitate y) `shouldBe` (Levitate y :|->: Levitate x)
             (Levitate x :|-|: Levitate y) `shouldBe` (Levitate y :|-|: Levitate x)
 
-    it "orients infinite intervals" $ do
+    it "orient infinite intervals" $ do
       (Top :<->: Bottom) `shouldBe` (Bottom :<->: Top :: Interval Int)
       (Top :|->: Bottom) `shouldBe` (Bottom :<-|: Top :: Interval Int)
       (Top :<-|: Bottom) `shouldBe` (Bottom :|->: Top :: Interval Int)
       (Top :|-|: Bottom) `shouldBe` (Bottom :|-|: Top :: Interval Int)
 
-    it "closes point intervals" $ do
+    it "close point intervals" $ do
       property @(Int -> _) $ \x -> do
         (x :<>: x) `shouldBe` (x :||: x)
         (x :|>: x) `shouldBe` (x :||: x)
@@ -60,12 +67,12 @@ main = hspec $ do
 
   describe "Borel intervals" $ do
     it "(<>) is commutative" $ do
-      property @(Int -> Int -> Int -> Int -> _) $ \a b x y -> do
+      property @(Ints 4 _) $ \a b x y -> do
         let abxy = Borel.singleton (a :<>: b) <> Borel.singleton (x :<>: y)
             xyab = Borel.singleton (x :<>: y) <> Borel.singleton (a :<>: b)
         abxy `shouldBe` xyab
     it "(<>) is associative" $ do
-      property @(Int -> Int -> Int -> Int -> Int -> Int -> _) $ \a b m n x y -> do
+      property @(Ints 6 _) $ \a b m n x y -> do
         let ab = Borel.singleton (a :<>: b)
             mn = Borel.singleton (m :<>: n)
             xy = Borel.singleton (x :<>: y)
