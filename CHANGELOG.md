@@ -12,6 +12,8 @@
 * fix regression in smart constructor ordering
 * add example to `measuring`
 * improve implementation of `unionsAsc`
+* rename `Data.Interval.Borel.cutout` to `remove`
+* rename `Data.Interval.Borel.clip` to `truncate`
 
 ## 0.3.1.0 - 2022-07-13
 
