@@ -12,8 +12,12 @@
 * fix regression in smart constructor ordering
 * add example to `measuring`
 * improve implementation of `unionsAsc`
-* rename `Data.Interval.Borel.cutout` to `remove`
-* rename `Data.Interval.Borel.clip` to `truncate`
+* rename `Data.Interval.Borel.cutout` to `remove`, flipped infix synonym `(\-)`
+* rename `Data.Interval.Borel.clip` to `truncate`, flipped infix synonym `(\=)`
+* rename previous `Data.Interval.Layers.remove` to `dig`
+* new function `Data.Interval.Layers.remove` akin to `Borel`, flipped infix synonym `(\-)`
+* rename `Data.Interval.Layers.clip` to `truncate`, flipped infix synonym `(\=)`
+* `pile`, flipped synonym for `Data.Interval.Layers.insert`
 
 ## 0.3.1.0 - 2022-07-13
 

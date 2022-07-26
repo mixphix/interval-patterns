@@ -5,13 +5,17 @@ module Data.Interval.Layers (
   empty,
   singleton,
   insert,
+  pile,
   squash,
   thickness,
   thickest,
+  dig,
   remove,
+  (\-),
   baseline,
   difference,
-  clip,
+  truncate,
+  (\=),
   toStepFunction,
 
   -- ** Helper functions
@@ -20,25 +24,19 @@ module Data.Interval.Layers (
 ) where
 
 import Algebra.Lattice.Levitated
+import Data.Data
 import Data.Group (Group (..))
-import Data.Interval (Adjacency (..), Interval, pattern Whole, pattern (:---:), pattern (:<>:))
+import Data.Interval (Adjacency (..), Interval, OneOrTwo (..), pattern Whole, pattern (:---:), pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
 import Data.Map.Strict qualified as Map
-import Prelude hiding (empty)
+import Prelude hiding (empty, fromList, truncate)
 
 -- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
-  deriving
-    ( Eq
-    , Ord
-    , Show
-    , Functor
-    , Generic
-    , Typeable
-    )
+  deriving (Eq, Ord, Show, Functor, Generic, Typeable, Data)
 
 instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
   Layers s1 <> Layers s2 =
@@ -81,9 +79,36 @@ insert ::
   Layers x y
 insert ix y = (<>) (singleton ix y)
 
+-- | Flipped synonym for 'insert'.
+-- Mnemonic: "pile" this much onto the existing 'Layers'
+-- over the given 'Interval'.
+pile ::
+  (Ord x, Semigroup y) =>
+  y ->
+  Interval x ->
+  Layers x y ->
+  Layers x y
+pile = flip insert
+
 -- | Take away a thickness over a given base from the 'Layers'.
-remove :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
-remove y ix = insert ix (invert y)
+dig :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
+dig y ix = insert ix (invert y)
+
+-- | Completely remove an 'Interval' from the 'Layers'.
+remove :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
+remove ix (Layers s) =
+  Map.foldlWithKey'
+    ( \acc jx y -> case jx I.\\ ix of
+        Nothing -> acc
+        Just (One kx) -> acc <> singleton kx y
+        Just (Two kx lx) -> acc <> fromList [(kx, y), (lx, y)]
+    )
+    empty
+    s
+
+-- | Fliped infix version of 'remove'.
+(\-) :: (Ord x, Semigroup y) => Layers x y -> Interval x -> Layers x y
+(\-) = flip remove
 
 -- | Add the given thickness to every point.
 baseline :: (Ord x, Semigroup y) => y -> Layers x y -> Layers x y
@@ -92,11 +117,11 @@ baseline = insert Whole
 -- | "Excavate" the second argument from the first.
 difference :: (Ord x, Group y) => Layers x y -> Layers x y -> Layers x y
 difference layers (Layers s) =
-  foldr (uncurry (flip remove)) layers (Map.toAscList s)
+  foldr (uncurry (flip dig)) layers (Map.toAscList s)
 
 -- | Restrict the range of the 'Layers' to the given 'Interval'.
-clip :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
-clip ix (Layers s) =
+truncate :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
+truncate ix (Layers s) =
   Map.foldlWithKey'
     ( \acc jx y -> case I.intersect ix jx of
         Nothing -> acc
@@ -104,6 +129,10 @@ clip ix (Layers s) =
     )
     empty
     s
+
+-- | Flipped infix version of 'truncate'.
+(\=) :: (Ord x, Semigroup y) => Layers x y -> Interval x -> Layers x y
+(\=) = flip truncate
 
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
