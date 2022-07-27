@@ -46,7 +46,10 @@ eventSize n = (`Layers.singleton` Sum n)
 erlangs :: (Real n) => Timeframe -> Event n -> Maybe Rational
 erlangs ix e =
   let diff = realToFrac <<$>> diffUTCTime
-   in liftA2 (/) (Layers.integrate diff (realToFrac . getSum) ix e) (I.measuring diff ix)
+   in liftA2
+        (/)
+        (Layers.integrate diff (realToFrac . getSum) ix e)
+        (I.measuring diff ix)
 
 -- | A 'Calendar' is a map from a given event type to durations.
 newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
@@ -74,27 +77,38 @@ calendar ev tf = singleton ev (Layers.singleton tf 1)
 insert :: (Ord ev, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
 insert ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
 
--- | Get the 'Event' corresponding to a given key, or 'Nothing' if the key is not present.
+-- |
+-- Get the 'Event' corresponding to a given key,
+-- or 'Nothing' if the key is not present.
 (!?) :: (Ord ev, Num n) => Calendar ev n -> ev -> Maybe (Event n)
 Calendar c !? ev = c Map.!? ev
 
--- | Get the 'Event' corresponding to a given key, or 'mempty' if the key is not present.
+-- |
+-- Get the 'Event' corresponding to a given key,
+-- or 'mempty' if the key is not present.
 (!) :: (Ord ev, Num n) => Calendar ev n -> ev -> Event n
 Calendar c ! ev = c Map.!? ev ?: mempty
 
 toList :: (Ord ev, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
 toList (Calendar c) = fmap getSum <<$>> Layers.toList <<$>> Map.assocs c
 
--- | What any how many events are happening at the given 'UTCTime' on this 'Calendar'?
+-- |
+-- What, and how many events are happening
+-- at the given 'UTCTime' on this 'Calendar'?
 happeningAt :: (Ord ev, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
 happeningAt time (Data.Calendar.toList -> evs) =
   [(ev, n) | (ev, ns) <- evs, (_, n) <- filter (within time . fst) ns]
 
--- | Consider every kind of event the same, and only observe the overall 'Layers'.
+-- | Consider every kind of event the same, and observe the overall 'Layers'.
 coalesce :: (Ord ev, Num n) => Calendar ev n -> Event n
 coalesce (Calendar c) = fold c
 
-totalDuration :: forall ev n. (Ord ev, Real n) => ev -> Calendar ev n -> Maybe NominalDiffTime
+totalDuration ::
+  forall ev n.
+  (Ord ev, Real n) =>
+  ev ->
+  Calendar ev n ->
+  Maybe NominalDiffTime
 totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
   Just is -> foldr f (Just 0) (Layers.toList is)
