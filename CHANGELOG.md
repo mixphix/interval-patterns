@@ -3,6 +3,7 @@
 ## 0.4.0.0 - 2022-07-*
 
 * New functions
+  * unidirectional `pattern (:--:)` for matching finite intervals regardless of `Bound`
   * `Data.Interval.Layers.integrate` for calculating areas
   * `Data.Calendar.erlangs` for calculating carried load
   * `pile`, flipped synonym for `Data.Interval.Layers.insert`

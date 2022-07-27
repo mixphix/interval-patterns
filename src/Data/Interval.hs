@@ -28,6 +28,7 @@ module Data.Interval (
   pattern (:<|:),
   pattern (:|>:),
   pattern (:||:),
+  pattern (:--:),
   pattern Whole,
   (+/-),
   (...),
@@ -277,7 +278,7 @@ infix 5 :|->:
 
 infix 5 :|-|:
 
--- | A pattern synonym matching open intervals.
+-- | A bidirectional pattern synonym matching open intervals.
 pattern (:<->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<->: u <-
   Inf l :<-->: Sup u
@@ -289,7 +290,7 @@ pattern l :<->: u <-
             EQ -> Min inf :|--|: Max sup
             _ -> Inf inf :<-->: Sup sup
 
--- | A pattern synonym matching open-closed intervals.
+-- | A bidirectional pattern synonym matching open-closed intervals.
 pattern (:<-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<-|: u <-
   Inf l :<--|: Max u
@@ -302,7 +303,7 @@ pattern l :<-|: u <-
             EQ -> Min inf :|--|: Max sup
             GT -> Min inf :|-->: Sup sup
 
--- | A pattern synonym matching closed-open intervals.
+-- | A bidirectional pattern synonym matching closed-open intervals.
 pattern (:|->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :|->: u <-
   Min l :|-->: Sup u
@@ -315,7 +316,7 @@ pattern l :|->: u <-
             EQ -> Min inf :|--|: Max sup
             GT -> Inf inf :<--|: Max sup
 
--- | A pattern synonym matching closed intervals.
+-- | A bidirectional pattern synonym matching closed intervals.
 pattern (:|-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :|-|: u <-
   Min l :|--|: Max u
@@ -324,8 +325,10 @@ pattern l :|-|: u <-
 
 {-# COMPLETE (:<->:), (:<-|:), (:|->:), (:|-|:) #-}
 
+-- | A unidirectional pattern synonym ignoring the particular 'Bound's.
 pattern (:---:) :: forall x. (Ord x) => Levitated x -> Levitated x -> Interval x
-pattern l :---: u <- (bounds -> (SomeBound (unBound -> l), SomeBound (unBound -> u)))
+pattern l :---: u <-
+  (bounds -> (SomeBound (unBound -> l), SomeBound (unBound -> u)))
 
 {-# COMPLETE (:---:) #-}
 
@@ -337,9 +340,9 @@ infix 5 :|>:
 
 infix 5 :||:
 
--- | A pattern synonym matching finite open intervals.
+-- | A bidirectional pattern synonym matching finite open intervals.
 pattern (:<>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<>: u <- -- Levitate l :<->: Levitate u
+pattern l :<>: u <-
   Levitate l :<->: Levitate u
   where
     b1 :<>: b2 =
@@ -349,9 +352,9 @@ pattern l :<>: u <- -- Levitate l :<->: Levitate u
             EQ -> Min inf :|--|: Max sup
             _ -> Inf inf :<-->: Sup sup
 
--- | A pattern synonym matching finite open-closed intervals.
+-- | A bidirectional pattern synonym matching finite open-closed intervals.
 pattern (:<|:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<|: u <- -- Levitate l :<-|: Levitate u
+pattern l :<|: u <-
   Levitate l :<-|: Levitate u
   where
     b1 :<|: b2 =
@@ -362,9 +365,9 @@ pattern l :<|: u <- -- Levitate l :<-|: Levitate u
             EQ -> Min inf :|--|: Max sup
             GT -> Min inf :|-->: Sup sup
 
--- | A pattern synonym matching finite closed-open intervals.
+-- | A bidirectional pattern synonym matching finite closed-open intervals.
 pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :|>: u <- -- Levitate l :|->: Levitate u
+pattern l :|>: u <-
   Levitate l :|->: Levitate u
   where
     b1 :|>: b2 =
@@ -375,12 +378,21 @@ pattern l :|>: u <- -- Levitate l :|->: Levitate u
             EQ -> Min inf :|--|: Max sup
             GT -> Inf inf :<--|: Max sup
 
--- | A pattern synonym matching finite closed intervals.
+-- | A bidirectional pattern synonym matching finite closed intervals.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :||: u <- -- Levitate l :|-|: Levitate u
+pattern l :||: u <-
   Levitate l :|-|: Levitate u
   where
     b1 :||: b2 = Min (Levitate $ min b1 b2) :|--|: Max (Levitate $ max b1 b2)
+
+-- |
+-- A unidirectional pattern synonym matching finite intervals,
+-- that ignores the particular 'Bound's.
+pattern (:--:) :: forall x. (Ord x) => x -> x -> Interval x
+pattern l :--: u <-
+  ( bounds ->
+      (SomeBound (unBound -> Levitate l), SomeBound (unBound -> Levitate u))
+    )
 
 -- | The whole interval.
 pattern Whole :: (Ord x) => Interval x
