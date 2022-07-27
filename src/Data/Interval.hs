@@ -484,12 +484,7 @@ instance (Ord x, Generic x) => Generic (Interval x) where
     l :|->: u -> (Const (l, Minimum) :*: Const (u, Supremum))
     l :<-|: u -> (Const (l, Infimum) :*: Const (u, Maximum))
     l :|-|: u -> (Const (l, Minimum) :*: Const (u, Maximum))
-  to = \case
-    (Const (l, Infimum) :*: Const (u, Supremum)) -> l :<->: u
-    (Const (l, Minimum) :*: Const (u, Supremum)) -> l :|->: u
-    (Const (l, Infimum) :*: Const (u, Maximum)) -> l :<-|: u
-    (Const (l, Minimum) :*: Const (u, Maximum)) -> l :|-|: u
-    _ -> error "GHC.Generics.to: invalid interval representation"
+  to (Const l :*: Const u) = l ... u
 
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
 -- prevent it from being a 'Functor', this will have to suffice.

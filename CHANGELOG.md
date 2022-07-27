@@ -24,6 +24,7 @@
   * fix regression in smart constructor ordering
   * add example to `measuring`
   * improve implementation of `unionsAsc`
+  * better `Show` instance for finite intervals
 
 ## 0.3.1.0 - 2022-07-13
 
