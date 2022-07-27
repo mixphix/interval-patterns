@@ -22,6 +22,7 @@
   * `imin`, `iinf`, `isup`, `imax` no longer return `Bound`s
   * fix `difference` in cases `MetBy` and `After`
   * fix regression in smart constructor ordering
+  * fix `within` on boundaries
   * add example to `measuring`
   * improve implementation of `unionsAsc`
   * better `Show` instance for finite intervals

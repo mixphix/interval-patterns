@@ -650,10 +650,10 @@ converseAdjacency = \case
 -- | Get the convex hull of two intervals.
 --
 -- >>> hull (7 :|>: 8) (3 :|>: 4)
--- (Levitate 3 :|->: Levitate 8)
+-- (3 :|>: 8)
 --
--- >>> hull (Bottom :<-|: 3) (3 :<|: 4)
--- (Bottom :<-|: Levitate 4)
+-- >>> hull (Bottom :<-|: Levitate 3) (4 :<>: 5)
+-- (Bottom :<->: Levitate 5)
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
 hull i1 i2 = case (lower (min i1 i2), upper (max i1 i2)) of
   (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
@@ -669,7 +669,11 @@ hulls (i :| j : is) = hulls $ hull i j :| is
 
 -- | Test whether a point is contained in the interval.
 within :: (Ord x) => x -> Interval x -> Bool
-within (Levitate -> x) (l :---: u) = l < x && x < u
+within (Levitate -> x) = \case
+  l :<->: u -> l < x && x < u
+  l :<-|: u -> l < x && x <= u
+  l :|->: u -> l <= x && x < u
+  l :|-|: u -> l <= x && x <= u
 
 -- | Create the closed-closed interval at a given point.
 point :: (Ord x) => x -> Interval x
@@ -827,13 +831,13 @@ adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
 -- @
 --
 -- >>> intersect (2 :<>: 4) (3 :||: 5)
--- Just (Levitate 3 :|->: Levitate 4)
+-- Just (3 :|>: 4)
 --
 -- >>> intersect (2 :<>: 4) (4 :||: 5)
 -- Nothing
 --
 -- >>> intersect (1 :<>: 4) (2 :||: 3)
--- Just (Levitate 2 :|-|: Levitate 3)
+-- Just (2 :||: 3)
 --
 -- @
 intersect ::
@@ -957,13 +961,13 @@ complement = \case
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
 --
 -- >>> difference (1 :<>: 4) (2 :||: 3)
--- Just (Two (Levitate 1 :<->: Levitate 2) (Levitate 3 :<->: Levitate 4))
+-- Just (Two (1 :<>: 2) (3 :<>: 4))
 --
 -- >>> difference (1 :|>: 4) (0 :||: 1)
--- Just (One (Levitate 1 :<->: Levitate 4))
+-- Just (One (1 :<>: 4))
 --
 -- >>> difference (1 :<>: 4) (0 :||: 1)
--- Just (One (Levitate 1 :<->: Levitate 4))
+-- Just (One (1 :<>: 4))
 --
 -- @
 difference ::
@@ -1005,7 +1009,7 @@ difference i1 i2 = case adjacency i1 i2 of
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
 --
 -- >>> symmetricDifference (1 :<>: 4) (2 :||: 3)
--- Just (Two (Levitate 1 :<->: Levitate 2) (Levitate 3 :<->: Levitate 4))
+-- Just (Two (1 :<>: 2) (3 :<>: 4))
 --
 -- @
 symmetricDifference ::
