@@ -402,6 +402,10 @@ deriving instance (Ord x) => Eq (Interval x)
 
 instance (Ord x, Show x) => Show (Interval x) where
   show = \case
+    l :<>: u -> "(" <> show l <> " :<>: " <> show u <> ")"
+    l :|>: u -> "(" <> show l <> " :|>: " <> show u <> ")"
+    l :<|: u -> "(" <> show l <> " :<|: " <> show u <> ")"
+    l :||: u -> "(" <> show l <> " :||: " <> show u <> ")"
     l :<->: u -> "(" <> show l <> " :<->: " <> show u <> ")"
     l :|->: u -> "(" <> show l <> " :|->: " <> show u <> ")"
     l :<-|: u -> "(" <> show l <> " :<-|: " <> show u <> ")"
