@@ -59,7 +59,7 @@ singleton ix y = Layers (Map.singleton ix y)
 
 -- | Draw the 'Layers' of specified bases and thicknesses.
 fromList :: (Ord x, Semigroup y) => [(Interval x, y)] -> Layers x y
-fromList = foldMap (uncurry singleton)
+fromList = Layers . Map.fromList . nestings
 
 -- | Get all of the bases and thicknesses in the 'Layers'.
 toList :: (Ord x) => Layers x y -> [(Interval x, y)]
@@ -209,14 +209,14 @@ nestingsAsc = \case
         (j, jy) : js
     During i j k ->
       nestings $
-        (i, iy) :
+        (i, jy) :
         (j, iy <> jy) :
         (k, jy) : js
     Finishes i j ->
       nestings $
         (i, iy) :
         (j, iy <> jy) : js
-    Identical i -> (i, iy <> jy) : nestings js
+    Identical i -> nestings ((i, iy <> jy) : js)
     FinishedBy i j ->
       nestings $
         (i, iy) :
@@ -225,16 +225,16 @@ nestingsAsc = \case
       nestings $
         (i, iy) :
         (j, iy <> jy) :
-        (k, jy) : js
+        (k, iy) : js
     StartedBy i j ->
       nestings $
         (i, iy <> jy) :
-        (j, jy) : js
+        (j, iy) : js
     OverlappedBy i j k ->
       nestings $
-        (i, iy) :
+        (i, jy) :
         (j, iy <> jy) :
-        (k, jy) : js
-    MetBy i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
-    After i j -> (i, iy) : nestings ((j, jy) : js)
+        (k, iy) : js
+    MetBy i j k -> (i, jy) : nestings ((j, iy <> jy) : (k, iy) : js)
+    After i j -> (i, jy) : nestings ((j, iy) : js)
   x -> x
