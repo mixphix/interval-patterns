@@ -21,7 +21,6 @@ module Data.Interval.Layers (
 
   -- ** Helper functions
   nestings,
-  nestingsAsc,
 ) where
 
 import Algebra.Lattice.Levitated
@@ -42,7 +41,7 @@ newtype Layers x y = Layers (Map (Interval x) y)
 instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
   Layers s1 <> Layers s2 =
     let s = Map.toAscList $ Map.unionWith (<>) s1 s2
-     in Layers $ Map.fromAscList (nestingsAsc s)
+     in Layers $ Map.fromList (nestingsAsc s)
 
 instance (Ord x, Semigroup y) => Monoid (Layers x y) where
   mempty = Layers mempty
@@ -197,45 +196,45 @@ nestingsAsc ::
   [(Interval x, y)]
 nestingsAsc = \case
   (i', iy) : (j', jy) : js -> case I.adjacency i' j' of
-    Before i j -> (i, iy) : nestingsAsc ((j, jy) : js)
-    Meets i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
+    Before i j -> (i, iy) : nestings ((j, jy) : js)
+    Meets i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
     Overlaps i j k ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) :
         (k, jy) : js
     Starts i j ->
-      nestingsAsc $
+      nestings $
         (i, iy <> jy) :
         (j, jy) : js
     During i j k ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) :
         (k, jy) : js
     Finishes i j ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) : js
-    Identical i -> (i, iy <> jy) : nestingsAsc js
+    Identical i -> (i, iy <> jy) : nestings js
     FinishedBy i j ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) : js
     Contains i j k ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) :
         (k, jy) : js
     StartedBy i j ->
-      nestingsAsc $
+      nestings $
         (i, iy <> jy) :
         (j, jy) : js
     OverlappedBy i j k ->
-      nestingsAsc $
+      nestings $
         (i, iy) :
         (j, iy <> jy) :
         (k, jy) : js
-    MetBy i j k -> (i, iy) : nestingsAsc ((j, iy <> jy) : (k, jy) : js)
-    After i j -> (i, iy) : nestingsAsc ((j, jy) : js)
+    MetBy i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
+    After i j -> (i, iy) : nestings ((j, jy) : js)
   x -> x

@@ -3,6 +3,9 @@
 ## 0.5.0.0 - 2022-08-04
 
 * fix direction of `diffUTCTime` in `erlangs`
+* Remove export of `Data.Interval.Layers.nestingsAsc`
+  * also fix its implementation
+  * rely on `nestings` for external use
 
 ## 0.4.0.0 - 2022-07-26
 
