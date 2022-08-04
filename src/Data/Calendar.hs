@@ -45,7 +45,7 @@ eventSize n = (`Layers.singleton` Sum n)
 -- all of the simultaneous happenings over a given span (on average)?
 erlangs :: (Real n) => Timeframe -> Event n -> Maybe Rational
 erlangs ix e =
-  let diff = realToFrac <<$>> diffUTCTime
+  let diff = realToFrac <<$>> flip diffUTCTime
    in liftA2
         (/)
         (Layers.integrate diff (realToFrac . getSum) ix e)

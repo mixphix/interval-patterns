@@ -1,6 +1,10 @@
 # Revision history for interval-patterns
 
-## 0.4.0.0 - 2022-07-*
+## 0.5.0.0 - 2022-08-04
+
+* fix direction of `diffUTCTime` in `erlangs`
+
+## 0.4.0.0 - 2022-07-26
 
 * New functions
   * unidirectional `pattern (:--:)` for matching finite intervals regardless of `Bound`
