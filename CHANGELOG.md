@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.6.0.0
+
+* drop `relude` dependency
+
 ## 0.5.1.0 - 2022-08-04
 
 * improve performance of `Layers.fromList`

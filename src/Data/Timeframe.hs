@@ -7,6 +7,9 @@ module Data.Timeframe (
   duration,
 ) where
 
+import Control.Monad.IO.Class (MonadIO (..))
+import Data.Function (on)
+import Data.Functor ((<&>))
 import Data.Interval
 import Data.Time.Compat
 import GHC.IO (unsafePerformIO)

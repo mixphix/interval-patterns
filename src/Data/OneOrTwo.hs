@@ -3,7 +3,8 @@ module Data.OneOrTwo (
   oneOrTwo,
 ) where
 
-import Data.Data (Data)
+import Data.Data (Data, Typeable)
+import GHC.Generics (Generic)
 
 -- | Either one of something, or two of it.
 --

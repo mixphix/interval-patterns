@@ -1,28 +1,29 @@
-cabal-version: 3.0
-name: interval-patterns
-version: 0.5.1.0
-author: Melanie Brown
-synopsis: Intervals, and monoids thereof
-description: Please see the README at https://github.com/mixphix/interval-patterns
-category: Algebra, Charts, Data Structures, Math, Statistics
-maintainer: brown.m@pm.me
-license: BSD-3-Clause
-license-file: LICENSE
-homepage: https://github.com/mixphix/interval-patterns
-bug-reports: https://github.com/mixphix/interval-patterns/issues
+cabal-version:      3.0
+name:               interval-patterns
+version:            0.6.0.0
+author:             Melanie Brown
+synopsis:           Intervals, and monoids thereof
+category:           Algebra, Charts, Data Structures, Math, Statistics
+maintainer:         brown.m@pm.me
+license:            BSD-3-Clause
+license-file:       LICENSE
+homepage:           https://github.com/mixphix/interval-patterns
+bug-reports:        https://github.com/mixphix/interval-patterns/issues
 extra-source-files: CHANGELOG.md
-copyright: 2022 Melanie Brown
+copyright:          2023 Melanie Brown
+description:
+  Please see the README at https://github.com/mixphix/interval-patterns
 
 common interval-patterns
   build-depends:
-    , base >= 4.11 && < 5
+    , base         >=4.11    && <5
     , containers
-    , groups >= 0.2.2
-    , lattices >= 2.0.3 && < 2.1
-    , semirings >= 0.6 && < 0.7
-    , relude >= 1.0.0.1 && < 1.1
+    , groups       >=0.2.2
+    , lattices     >=2.0.3   && <2.1
+    , semirings    >=0.6     && <0.7
     , time
-    , time-compat >= 1.9.6.1 && < 1.10
+    , time-compat  >=1.9.6.1 && <1.10
+
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -59,29 +60,26 @@ common interval-patterns
     TypeFamilies
     TypeOperators
     ViewPatterns
-  default-language: Haskell2010
-  ghc-options: -Wall -Wcompat -Wno-unticked-promoted-constructors
-  mixins:
-    base hiding (Prelude)
-    , relude (Relude as Prelude)
-    , relude
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall -Wcompat -Wno-unticked-promoted-constructors
 
 library
-  import: interval-patterns
-  hs-source-dirs: src
+  import:          interval-patterns
+  hs-source-dirs:  src
   exposed-modules:
+    Data.Calendar
     Data.Interval
-    Data.Interval.Layers
     Data.Interval.Borel
+    Data.Interval.Layers
     Data.OneOrTwo
     Data.Timeframe
-    Data.Calendar
 
 test-suite tests
-  import: interval-patterns
-  type: exitcode-stdio-1.0
+  import:         interval-patterns
+  type:           exitcode-stdio-1.0
   hs-source-dirs: tests
-  main-is: Main.hs
+  main-is:        Main.hs
   build-depends:
     , hspec
     , interval-patterns

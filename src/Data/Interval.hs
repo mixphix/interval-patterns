@@ -74,11 +74,18 @@ module Data.Interval (
   OneOrTwo (..),
 ) where
 
-import Algebra.Lattice.Levitated
+import Algebra.Lattice.Levitated (Levitated (..), foldLevitated)
+import Control.Applicative (liftA2)
+import Control.Monad (join)
 import Data.Data
+import Data.Function (on)
+import Data.Functor.Const (Const (Const))
+import Data.Kind (Constraint, Type)
+import Data.List (sort)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.OneOrTwo (OneOrTwo (..))
-import GHC.Generics hiding (Infix)
-import GHC.Show qualified (show)
+import Data.Ord (comparing)
+import GHC.Generics (Generic (..), type (:*:) (..))
 
 -- | The kinds of extremum an interval can have.
 data Extremum

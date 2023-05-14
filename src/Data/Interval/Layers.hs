@@ -23,15 +23,18 @@ module Data.Interval.Layers (
   nestings,
 ) where
 
-import Algebra.Lattice.Levitated
-import Data.Data
+import Algebra.Lattice.Levitated (Levitated (Top))
+import Data.Data (Data, Typeable)
 import Data.Group (Group (..))
 import Data.Interval (Adjacency (..), Interval, OneOrTwo (..), pattern Whole, pattern (:---:), pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
+import Data.List (sortOn)
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Prelude hiding (empty, fromList, truncate)
+import GHC.Generics (Generic)
+import Prelude hiding (truncate)
 
 -- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
@@ -200,41 +203,49 @@ nestingsAsc = \case
     Meets i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
     Overlaps i j k ->
       nestings $
-        (i, iy) :
-        (j, iy <> jy) :
-        (k, jy) : js
+        (i, iy)
+          : (j, iy <> jy)
+          : (k, jy)
+          : js
     Starts i j ->
       nestings $
-        (i, iy <> jy) :
-        (j, jy) : js
+        (i, iy <> jy)
+          : (j, jy)
+          : js
     During i j k ->
       nestings $
-        (i, jy) :
-        (j, iy <> jy) :
-        (k, jy) : js
+        (i, jy)
+          : (j, iy <> jy)
+          : (k, jy)
+          : js
     Finishes i j ->
       nestings $
-        (i, iy) :
-        (j, iy <> jy) : js
+        (i, iy)
+          : (j, iy <> jy)
+          : js
     Identical i -> nestings ((i, iy <> jy) : js)
     FinishedBy i j ->
       nestings $
-        (i, iy) :
-        (j, iy <> jy) : js
+        (i, iy)
+          : (j, iy <> jy)
+          : js
     Contains i j k ->
       nestings $
-        (i, iy) :
-        (j, iy <> jy) :
-        (k, iy) : js
+        (i, iy)
+          : (j, iy <> jy)
+          : (k, iy)
+          : js
     StartedBy i j ->
       nestings $
-        (i, iy <> jy) :
-        (j, iy) : js
+        (i, iy <> jy)
+          : (j, iy)
+          : js
     OverlappedBy i j k ->
       nestings $
-        (i, jy) :
-        (j, iy <> jy) :
-        (k, iy) : js
+        (i, jy)
+          : (j, iy <> jy)
+          : (k, iy)
+          : js
     MetBy i j k -> (i, jy) : nestings ((j, iy <> jy) : (k, iy) : js)
     After i j -> (i, jy) : nestings ((j, iy) : js)
   x -> x

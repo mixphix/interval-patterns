@@ -16,10 +16,16 @@ module Data.Calendar (
   totalDuration,
 ) where
 
+import Control.Applicative (liftA2)
+import Data.Data (Typeable)
+import Data.Foldable (fold)
 import Data.Interval qualified as I
 import Data.Interval.Layers (Layers)
 import Data.Interval.Layers qualified as Layers
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Semigroup hiding (diff)
 import Data.Time.Compat
 import Data.Timeframe
 
@@ -45,7 +51,7 @@ eventSize n = (`Layers.singleton` Sum n)
 -- all of the simultaneous happenings over a given span (on average)?
 erlangs :: (Real n) => Timeframe -> Event n -> Maybe Rational
 erlangs ix e =
-  let diff = realToFrac <<$>> flip diffUTCTime
+  let diff = fmap realToFrac <$> flip diffUTCTime
    in liftA2
         (/)
         (Layers.integrate diff (realToFrac . getSum) ix e)
@@ -87,10 +93,10 @@ Calendar c !? ev = c Map.!? ev
 -- Get the 'Event' corresponding to a given key,
 -- or 'mempty' if the key is not present.
 (!) :: (Ord ev, Num n) => Calendar ev n -> ev -> Event n
-Calendar c ! ev = c Map.!? ev ?: mempty
+Calendar c ! ev = fromMaybe mempty (c Map.!? ev)
 
 toList :: (Ord ev, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
-toList (Calendar c) = fmap getSum <<$>> Layers.toList <<$>> Map.assocs c
+toList (Calendar c) = fmap (fmap (fmap getSum) . Layers.toList) <$> Map.assocs c
 
 -- |
 -- What, and how many events are happening
