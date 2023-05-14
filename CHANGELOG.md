@@ -1,6 +1,6 @@
 # Revision history for interval-patterns
 
-## 0.6.0.0
+## 0.6.0.1
 
 * drop `relude` dependency
 
