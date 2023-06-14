@@ -1,6 +1,6 @@
 # Revision history for interval-patterns
 
-## 0.7.0.0
+## 0.7.0.1
 
 * use `heaps` to improve performance of `Layers` at the cost of an `Ord` constraint on the "height" of the layers
 

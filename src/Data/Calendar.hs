@@ -61,10 +61,10 @@ erlangs ix e =
 newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
   deriving (Eq, Ord, Show, Typeable)
 
-instance (Ord ev, Num n) => Semigroup (Calendar ev n) where
+instance (Ord ev, Ord n, Num n) => Semigroup (Calendar ev n) where
   Calendar a <> Calendar b = Calendar (Map.unionWith (<>) a b)
 
-instance (Ord ev, Num n) => Monoid (Calendar ev n) where
+instance (Ord ev, Ord n, Num n) => Monoid (Calendar ev n) where
   mempty = Data.Calendar.empty
 
 -- | The empty 'Calendar'.
@@ -72,41 +72,41 @@ empty :: Calendar ev n
 empty = Calendar Map.empty
 
 -- | Make a 'Calendar' from an 'Event'.
-singleton :: (Ord ev, Num n) => ev -> Event n -> Calendar ev n
+singleton :: (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n
 singleton ev cvg = Calendar (Map.singleton ev cvg)
 
 -- | Make a 'Calendar' from a 'Timeframe'.
-calendar :: (Ord ev, Num n) => ev -> Timeframe -> Calendar ev n
+calendar :: (Ord ev, Ord n, Num n) => ev -> Timeframe -> Calendar ev n
 calendar ev tf = singleton ev (Layers.singleton tf 1)
 
 -- | Insert an 'Event' of the given sort into a 'Calendar'.
-insert :: (Ord ev, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
+insert :: (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
 insert ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
 
 -- |
 -- Get the 'Event' corresponding to a given key,
 -- or 'Nothing' if the key is not present.
-(!?) :: (Ord ev, Num n) => Calendar ev n -> ev -> Maybe (Event n)
+(!?) :: (Ord ev, Ord n, Num n) => Calendar ev n -> ev -> Maybe (Event n)
 Calendar c !? ev = c Map.!? ev
 
 -- |
 -- Get the 'Event' corresponding to a given key,
 -- or 'mempty' if the key is not present.
-(!) :: (Ord ev, Num n) => Calendar ev n -> ev -> Event n
+(!) :: (Ord ev, Ord n, Num n) => Calendar ev n -> ev -> Event n
 Calendar c ! ev = fromMaybe mempty (c Map.!? ev)
 
-toList :: (Ord ev, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
+toList :: (Ord ev, Ord n, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
 toList (Calendar c) = fmap (fmap (fmap getSum) . Layers.toList) <$> Map.assocs c
 
 -- |
 -- What, and how many events are happening
 -- at the given 'UTCTime' on this 'Calendar'?
-happeningAt :: (Ord ev, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
+happeningAt :: (Ord ev, Ord n, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
 happeningAt time (Data.Calendar.toList -> evs) =
   [(ev, n) | (ev, ns) <- evs, (_, n) <- filter (within time . fst) ns]
 
 -- | Consider every kind of event the same, and observe the overall 'Layers'.
-coalesce :: (Ord ev, Num n) => Calendar ev n -> Event n
+coalesce :: (Ord ev, Ord n, Num n) => Calendar ev n -> Event n
 coalesce (Calendar c) = fold c
 
 totalDuration ::
