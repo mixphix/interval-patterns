@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## 0.7.0.0
+
+* use `heaps` to improve performance of `Layers` at the cost of an `Ord` constraint on the "height" of the layers
+
 ## 0.6.0.1
 
 * drop `relude` dependency
