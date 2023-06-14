@@ -25,12 +25,14 @@ module Data.Interval.Layers (
 
 import Algebra.Lattice.Levitated (Levitated (Top))
 import Data.Data (Data, Typeable)
+import Data.Foldable qualified as Foldable
 import Data.Group (Group (..))
+import Data.Heap (Heap)
+import Data.Heap qualified as Heap
 import Data.Interval (Adjacency (..), Interval, OneOrTwo (..), pattern Whole, pattern (:---:), pattern (:<>:))
 import Data.Interval qualified as I
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
-import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import GHC.Generics (Generic)
@@ -41,15 +43,15 @@ import Prelude hiding (truncate)
 newtype Layers x y = Layers (Map (Interval x) y)
   deriving (Eq, Ord, Show, Functor, Generic, Typeable, Data)
 
-instance (Ord x, Semigroup y) => Semigroup (Layers x y) where
+instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
   Layers s1 <> Layers s2 =
     let s = Map.toAscList $ Map.unionWith (<>) s1 s2
-     in Layers $ Map.fromList (nestingsAsc s)
+     in Layers $ Map.fromList (nestingsAsc $ Heap.fromList s)
 
-instance (Ord x, Semigroup y) => Monoid (Layers x y) where
+instance (Ord x, Ord y, Semigroup y) => Monoid (Layers x y) where
   mempty = Layers mempty
 
-instance (Ord x, Group y) => Group (Layers x y) where
+instance (Ord x, Ord y, Group y) => Group (Layers x y) where
   invert (Layers s) = Layers (fmap invert s)
 
 -- | A blank canvas.
@@ -61,7 +63,7 @@ singleton :: (Ord x) => Interval x -> y -> Layers x y
 singleton ix y = Layers (Map.singleton ix y)
 
 -- | Draw the 'Layers' of specified bases and thicknesses.
-fromList :: (Ord x, Semigroup y) => [(Interval x, y)] -> Layers x y
+fromList :: (Ord x, Ord y, Semigroup y) => [(Interval x, y)] -> Layers x y
 fromList = Layers . Map.fromList . nestings
 
 -- | Get all of the bases and thicknesses in the 'Layers'.
@@ -75,7 +77,7 @@ squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 
 -- | @insert ix y l@ draws over @l@ a rectangle with base @ix@ of thickness @y@.
 insert ::
-  (Ord x, Semigroup y) =>
+  (Ord x, Ord y, Semigroup y) =>
   Interval x ->
   y ->
   Layers x y ->
@@ -86,7 +88,7 @@ insert ix y = (<>) (singleton ix y)
 -- Mnemonic: "pile" this much onto the existing 'Layers'
 -- over the given 'Interval'.
 pile ::
-  (Ord x, Semigroup y) =>
+  (Ord x, Ord y, Semigroup y) =>
   y ->
   Interval x ->
   Layers x y ->
@@ -94,11 +96,11 @@ pile ::
 pile = flip insert
 
 -- | Take away a thickness over a given base from the 'Layers'.
-dig :: (Ord x, Group y) => y -> Interval x -> Layers x y -> Layers x y
+dig :: (Ord x, Ord y, Group y) => y -> Interval x -> Layers x y -> Layers x y
 dig y ix = insert ix (invert y)
 
 -- | Completely remove an 'Interval' from the 'Layers'.
-remove :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
+remove :: (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
 remove ix (Layers s) =
   Map.foldlWithKey'
     ( \acc jx y -> case jx I.\\ ix of
@@ -110,20 +112,20 @@ remove ix (Layers s) =
     s
 
 -- | Fliped infix version of 'remove'.
-(\-) :: (Ord x, Semigroup y) => Layers x y -> Interval x -> Layers x y
+(\-) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Interval x -> Layers x y
 (\-) = flip remove
 
 -- | Add the given thickness to every point.
-baseline :: (Ord x, Semigroup y) => y -> Layers x y -> Layers x y
+baseline :: (Ord x, Ord y, Semigroup y) => y -> Layers x y -> Layers x y
 baseline = insert Whole
 
 -- | "Excavate" the second argument from the first.
-difference :: (Ord x, Group y) => Layers x y -> Layers x y -> Layers x y
+difference :: (Ord x, Ord y, Group y) => Layers x y -> Layers x y -> Layers x y
 difference layers (Layers s) =
   foldr (uncurry (flip dig)) layers (Map.toAscList s)
 
 -- | Restrict the range of the 'Layers' to the given 'Interval'.
-truncate :: (Ord x, Semigroup y) => Interval x -> Layers x y -> Layers x y
+truncate :: (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
 truncate ix (Layers s) =
   Map.foldlWithKey'
     ( \acc jx y -> case I.intersect ix jx of
@@ -134,7 +136,7 @@ truncate ix (Layers s) =
     s
 
 -- | Flipped infix version of 'truncate'.
-(\=) :: (Ord x, Semigroup y) => Layers x y -> Interval x -> Layers x y
+(\=) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Interval x -> Layers x y
 (\=) = flip truncate
 
 -- |
@@ -142,7 +144,7 @@ truncate ix (Layers s) =
 -- using the measure @diff@ of the interval multiplied by the height @hgt@
 -- of the layers over each sub-interval in the layers.
 integrate ::
-  (Ord x, Semigroup y, Num z) =>
+  (Ord x, Ord y, Semigroup y, Num z) =>
   (x -> x -> z) ->
   (y -> z) ->
   Interval x ->
@@ -175,7 +177,7 @@ thickest (Layers s) =
 
 -- | Convert the 'Layers' into a list of beginning-points and heights,
 -- that define a step function piecewise.
-toStepFunction :: (Ord x, Monoid y) => Layers x y -> [(Levitated x, y)]
+toStepFunction :: (Ord x, Ord y, Monoid y) => Layers x y -> [(Levitated x, y)]
 toStepFunction s = g (Data.Interval.Layers.toList $ baseline mempty s)
  where
   g [(il :---: iu, iy), (j@(jl :---: Top), jy)]
@@ -188,64 +190,51 @@ toStepFunction s = g (Data.Interval.Layers.toList $ baseline mempty s)
   g [(il :---: iu, iy)] = [(il, iy), (iu, mempty)]
 
 nestings ::
-  (Ord x, Semigroup y) =>
+  (Ord x, Ord y, Semigroup y) =>
   [(Interval x, y)] ->
   [(Interval x, y)]
-nestings = nestingsAsc . sortOn fst
+nestings = nestingsAsc . Heap.fromList
 
 nestingsAsc ::
-  (Ord x, Semigroup y) =>
-  [(Interval x, y)] ->
+  (Ord x, Ord y, Semigroup y) =>
+  Heap (Interval x, y) ->
   [(Interval x, y)]
-nestingsAsc = \case
-  (i', iy) : (j', jy) : js -> case I.adjacency i' j' of
-    Before i j -> (i, iy) : nestings ((j, jy) : js)
-    Meets i j k -> (i, iy) : nestings ((j, iy <> jy) : (k, jy) : js)
+nestingsAsc heap = case firstTwo of
+  Nothing -> Foldable.toList heap
+  Just ((i', iy), (j', jy), js) -> case I.adjacency i' j' of
+    Before i j -> (i, iy) : nestingsAsc (Heap.insert (j, jy) js)
+    Meets i j k ->
+      (i, iy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, jy)] <> js)
     Overlaps i j k ->
-      nestings $
-        (i, iy)
-          : (j, iy <> jy)
-          : (k, jy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, iy), (j, iy <> jy), (k, jy)] <> js
     Starts i j ->
-      nestings $
-        (i, iy <> jy)
-          : (j, jy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, iy <> jy), (j, jy)] <> js
     During i j k ->
-      nestings $
-        (i, jy)
-          : (j, iy <> jy)
-          : (k, jy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, jy), (j, iy <> jy), (k, jy)] <> js
     Finishes i j ->
-      nestings $
-        (i, iy)
-          : (j, iy <> jy)
-          : js
-    Identical i -> nestings ((i, iy <> jy) : js)
+      nestingsAsc $
+        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
+    Identical i -> nestingsAsc (Heap.insert (i, iy <> jy) js)
     FinishedBy i j ->
-      nestings $
-        (i, iy)
-          : (j, iy <> jy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
     Contains i j k ->
-      nestings $
-        (i, iy)
-          : (j, iy <> jy)
-          : (k, iy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, iy), (j, iy <> jy), (k, iy)] <> js
     StartedBy i j ->
-      nestings $
-        (i, iy <> jy)
-          : (j, iy)
-          : js
+      nestingsAsc $
+        Heap.fromList [(i, iy <> jy), (j, iy)] <> js
     OverlappedBy i j k ->
-      nestings $
-        (i, jy)
-          : (j, iy <> jy)
-          : (k, iy)
-          : js
-    MetBy i j k -> (i, jy) : nestings ((j, iy <> jy) : (k, iy) : js)
-    After i j -> (i, jy) : nestings ((j, iy) : js)
-  x -> x
+      nestingsAsc $
+        Heap.fromList [(i, jy), (j, iy <> jy), (k, iy)] <> js
+    MetBy i j k ->
+      (i, jy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, iy)] <> js)
+    After i j -> (i, jy) : nestingsAsc (Heap.insert (j, iy) js)
+ where
+  firstTwo = do
+    (min1, heap') <- Heap.uncons heap
+    (min2, heap'') <- Heap.uncons heap'
+    pure (min1, min2, heap'')
