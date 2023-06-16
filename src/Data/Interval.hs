@@ -662,12 +662,20 @@ converseAdjacency = \case
 -- >>> hull (Bottom :<-|: Levitate 3) (4 :<>: 5)
 -- (Bottom :<->: Levitate 5)
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
-hull i1 i2 = case (lower (min i1 i2), upper (max i1 i2)) of
-  (SomeBound l@(Inf _), SomeBound u@(Sup _)) -> l :<-->: u
-  (SomeBound l@(Inf _), SomeBound u@(Max _)) -> l :<--|: u
-  (SomeBound l@(Min _), SomeBound u@(Sup _)) -> l :|-->: u
-  (SomeBound l@(Min _), SomeBound u@(Max _)) -> l :|--|: u
-  _ -> error "Invalid lower/upper bounds"
+hull i1 i2 = case adjacency i1 i2 of
+  Before i j -> lowerBound i ... upperBound j
+  Meets i _ k -> lowerBound i ... upperBound k
+  Overlaps i _ k -> lowerBound i ... upperBound k
+  Starts i j -> lowerBound i ... upperBound j
+  During i _ k -> lowerBound i ... upperBound k
+  Finishes i j -> lowerBound i ... upperBound j
+  Identical i -> i
+  FinishedBy i j -> lowerBound i ... upperBound j
+  Contains i _ k -> lowerBound i ... upperBound k
+  StartedBy i j -> lowerBound i ... upperBound j
+  OverlappedBy i _ k -> lowerBound i ... upperBound k
+  MetBy i _ k -> lowerBound i ... upperBound k
+  After i j -> lowerBound i ... upperBound j
 
 -- | Get the convex hull of a non-empty list of intervals.
 hulls :: (Ord x) => NonEmpty (Interval x) -> Interval x
