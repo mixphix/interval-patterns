@@ -1,51 +1,56 @@
 -- |
 -- Module       : Data.Interval
--- Copyright    : (c) Melanie Brown 2022
--- License:     : BSD3 (see the file LICENSE)
+-- Copyright    : (c) Melanie Brown 2023
+-- License      : BSD3 (see the file LICENSE)
 --
 -- Intervals over types and their operations.
 module Data.Interval (
-  Extremum (..),
-  opposite,
-  Bound (..),
-  unBound,
-  Bounding (..),
-  compareBounds,
-  SomeBound (..),
-  unSomeBound,
-  oppose,
-  Interval (..),
-  imap,
-  imapLev,
-  itraverse,
-  itraverseLev,
-  pattern (:<->:),
-  pattern (:<-|:),
-  pattern (:|->:),
-  pattern (:|-|:),
-  pattern (:---:),
+  -- * The Interval type
+  Interval,
+
+  -- ** Construction
+
+  -- *** Finite intervals
   pattern (:<>:),
   pattern (:<|:),
   pattern (:|>:),
   pattern (:||:),
   pattern (:--:),
+
+  -- *** Possibly-infinite intervals
+
+  -- |
+  -- The first four form a @{-# COMPLETE #-}@ set of bidirectional patterns,
+  -- and the final is a @{-# COMPLETE #-}@ unidirectional pattern on its own.
+  pattern (:<->:),
+  pattern (:<-|:),
+  pattern (:|->:),
+  pattern (:|-|:),
+  pattern (:---:),
+
+  -- *** Miscellaneous constructors
   pattern Whole,
   (+/-),
   (...),
+  interval,
+  point,
+
+  -- ** Deconstruction
   bounds,
   lower,
   lowerBound,
   upper,
   upperBound,
-  interval,
   imin,
   iinf,
   isup,
   imax,
-  hull,
-  hulls,
-  within,
-  point,
+
+  -- ** Modification
+  imap,
+  imapLev,
+  itraverse,
+  itraverseLev,
   open,
   close,
   openclosed,
@@ -56,7 +61,12 @@ module Data.Interval (
   closedUpper,
   setLower,
   setUpper,
+
+  -- * Computing with intervals
   Adjacency (..),
+  hull,
+  hulls,
+  within,
   converseAdjacency,
   adjacency,
   intersect,
@@ -71,6 +81,19 @@ module Data.Interval (
   measuring,
   hausdorff,
   isSubsetOf,
+
+  -- * Bounds
+  Extremum (..),
+  opposite,
+  Bound (..),
+  unBound,
+  Bounding (..),
+  compareBounds,
+  SomeBound (..),
+  unSomeBound,
+  oppose,
+
+  -- * Re-exports
   OneOrTwo (..),
 ) where
 
@@ -125,6 +148,7 @@ unBound = \case
   Max x -> x
 
 instance Functor (Bound ext) where
+  fmap :: (a -> b) -> Bound ext a -> Bound ext b
   fmap f = \case
     Min x -> Min (f x)
     Inf x -> Inf (f x)
@@ -132,6 +156,7 @@ instance Functor (Bound ext) where
     Max x -> Max (f x)
 
 instance Foldable (Bound ext) where
+  foldMap :: (Monoid m) => (a -> m) -> Bound ext a -> m
   foldMap f = \case
     Min x -> f x
     Inf x -> f x
@@ -139,6 +164,7 @@ instance Foldable (Bound ext) where
     Max x -> f x
 
 instance Traversable (Bound ext) where
+  traverse :: (Applicative f) => (a -> f b) -> Bound ext a -> f (Bound ext b)
   traverse f = \case
     Min x -> Min <$> f x
     Inf x -> Inf <$> f x
@@ -146,18 +172,22 @@ instance Traversable (Bound ext) where
     Max x -> Max <$> f x
 
 instance (Eq x) => Eq (Bound ext x) where
+  (==) :: (Eq x) => Bound ext x -> Bound ext x -> Bool
   Min x == Min y = x == y
   Inf x == Inf y = x == y
   Sup x == Sup y = x == y
   Max x == Max y = x == y
 
 instance (Ord x) => Ord (Bound ext (Levitated x)) where
+  compare ::
+    (Ord x) => Bound ext (Levitated x) -> Bound ext (Levitated x) -> Ordering
   compare = compareBounds
 
 -- | A type class for inverting 'Bound's.
 type Bounding :: Extremum -> Constraint
 class (Opposite (Opposite ext) ~ ext) => Bounding ext where
   type Opposite ext :: Extremum
+
   bound :: x -> Bound ext x
 
   -- | c.f. 'opposite'.
@@ -165,35 +195,51 @@ class (Opposite (Opposite ext) ~ ext) => Bounding ext where
 
 instance Bounding Minimum where
   type Opposite Minimum = Supremum
+
+  bound :: x -> Bound Minimum x
   bound = Min
+
+  opposeBound :: Bound Minimum x -> Bound Supremum x
   opposeBound (Min x) = Sup x
 
 instance Bounding Infimum where
   type Opposite Infimum = Maximum
+
+  bound :: x -> Bound Infimum x
   bound = Inf
+
+  opposeBound :: Bound Infimum x -> Bound Maximum x
   opposeBound (Inf x) = Max x
 
 instance Bounding Supremum where
   type Opposite Supremum = Minimum
+
+  bound :: x -> Bound Supremum x
   bound = Sup
+
+  opposeBound :: Bound Supremum x -> Bound Minimum x
   opposeBound (Sup x) = Min x
 
 instance Bounding Maximum where
   type Opposite Maximum = Infimum
+
+  bound :: x -> Bound Maximum x
   bound = Max
+
+  opposeBound :: Bound Maximum x -> Bound Infimum x
   opposeBound (Max x) = Inf x
 
 -- | 'Bound's have special comparison rules for identical points.
 --
--- >>> compareBounds (Min (Levitate 5)) (Max (Levitate 5))
+-- >>> compareBounds (Min (Levitate 0)) (Max (Levitate 0))
 -- EQ
--- >>> compareBounds (Inf (Levitate 5)) (Sup (Levitate 5))
+-- >>> compareBounds (Inf (Levitate 0)) (Sup (Levitate 0))
 -- GT
--- >>> compareBounds (Max (Levitate 5)) (Sup (Levitate 5))
+-- >>> compareBounds (Max (Levitate 0)) (Sup (Levitate 0))
 -- GT
--- >>> compareBounds (Inf (Levitate 5)) (Min (Levitate 5))
+-- >>> compareBounds (Inf (Levitate 0)) (Min (Levitate 0))
 -- GT
--- >>> compareBounds (Max (Levitate 5)) (Inf (Levitate 5))
+-- >>> compareBounds (Max (Levitate 0)) (Inf (Levitate 0))
 -- LT
 compareBounds ::
   (Ord x) =>
@@ -227,6 +273,7 @@ data SomeBound x
     SomeBound !(Bound ext x)
 
 instance (Eq x) => Eq (SomeBound (Levitated x)) where
+  (==) :: (Eq x) => SomeBound (Levitated x) -> SomeBound (Levitated x) -> Bool
   SomeBound (Min a) == SomeBound (Min b) = a == b
   SomeBound (Max a) == SomeBound (Max b) = a == b
   SomeBound (Inf a) == SomeBound (Inf b) = a == b
@@ -234,6 +281,8 @@ instance (Eq x) => Eq (SomeBound (Levitated x)) where
   _ == _ = False
 
 instance (Ord x) => Ord (SomeBound (Levitated x)) where
+  compare ::
+    (Ord x) => SomeBound (Levitated x) -> SomeBound (Levitated x) -> Ordering
   SomeBound b0 `compare` SomeBound b1 = compareBounds b0 b1
 
 oppose :: SomeBound x -> SomeBound x
@@ -252,25 +301,25 @@ infix 5 :|--|:
 
 type Interval :: Type -> Type
 data Interval x where
-  -- Open-open interval. You probably want '(:<->:)' or '(:<>:)'.
+  -- | Open-open interval. You probably want '(:<->:)' or '(:<>:)'.
   (:<-->:) ::
     (Ord x) =>
     !(Bound Infimum (Levitated x)) ->
     !(Bound Supremum (Levitated x)) ->
     Interval x
-  -- Open-closed interval. You probably want '(:<-|:)' or '(:<|:)'.
+  -- | Open-closed interval. You probably want '(:<-|:)' or '(:<|:)'.
   (:<--|:) ::
     (Ord x) =>
     !(Bound Infimum (Levitated x)) ->
     !(Bound Maximum (Levitated x)) ->
     Interval x
-  -- Closed-open interval. You probably want '(:|->:)' or '(:|>:)'.
+  -- | Closed-open interval. You probably want '(:|->:)' or '(:|>:)'.
   (:|-->:) ::
     (Ord x) =>
     !(Bound Minimum (Levitated x)) ->
     !(Bound Supremum (Levitated x)) ->
     Interval x
-  -- Closed-closed interval. You probably want '(:|-|:)' or '(:||:)'.
+  -- | Closed-closed interval. You probably want '(:|-|:)' or '(:||:)'.
   (:|--|:) ::
     (Ord x) =>
     !(Bound Minimum (Levitated x)) ->
@@ -401,13 +450,14 @@ pattern l :--: u <-
       (SomeBound (unBound -> Levitate l), SomeBound (unBound -> Levitate u))
     )
 
--- | The whole interval.
+-- | The whole interval, 'Bottom' ':|-|:' 'Top'.
 pattern Whole :: (Ord x) => Interval x
 pattern Whole = Bottom :|-|: Top
 
 deriving instance (Ord x) => Eq (Interval x)
 
 instance (Ord x, Show x) => Show (Interval x) where
+  show :: (Ord x, Show x) => Interval x -> String
   show = \case
     l :<>: u -> "(" <> show l <> " :<>: " <> show u <> ")"
     l :|>: u -> "(" <> show l <> " :|>: " <> show u <> ")"
@@ -419,20 +469,38 @@ instance (Ord x, Show x) => Show (Interval x) where
     l :|-|: u -> "(" <> show l <> " :|-|: " <> show u <> ")"
 
 instance (Ord x) => Ord (Interval x) where
+  compare :: (Ord x) => Interval x -> Interval x -> Ordering
   compare i1 i2 = on compare lower i1 i2 <> on compare upper i1 i2
 
 instance (Ord x, Data x) => Data (Interval x) where
+  gfoldl ::
+    (Ord x, Data x) =>
+    (forall d b. (Data d) => c (d -> b) -> d -> c b) ->
+    (forall g. g -> c g) ->
+    Interval x ->
+    c (Interval x)
   gfoldl (<^>) gpure = \case
     l :<->: u -> gpure (:<->:) <^> l <^> u
     l :|->: u -> gpure (:|->:) <^> l <^> u
     l :<-|: u -> gpure (:<-|:) <^> l <^> u
     l :|-|: u -> gpure (:|-|:) <^> l <^> u
+
+  toConstr :: (Ord x, Data x) => Interval x -> Constr
   toConstr = \case
     _ :<->: _ -> intervalOpenOpenConstr
     _ :|->: _ -> intervalClosedOpenConstr
     _ :<-|: _ -> intervalOpenClosedConstr
     _ :|-|: _ -> intervalClosedClosedConstr
+
+  dataTypeOf :: (Ord x, Data x) => Interval x -> DataType
   dataTypeOf _ = intervalDataType
+
+  gunfold ::
+    (Ord x, Data x) =>
+    (forall b r. (Data b) => c (b -> r) -> c r) ->
+    (forall r. r -> c r) ->
+    Constr ->
+    c (Interval x)
   gunfold k gpure constr = case constrIndex constr of
     0 -> k (k (gpure (:<->:)))
     1 -> k (k (gpure (:|->:)))
@@ -482,15 +550,21 @@ intervalDataType =
     , intervalClosedClosedConstr
     ]
 
-deriving instance Typeable x => Typeable (Interval x)
+deriving instance (Typeable x) => Typeable (Interval x)
 
 instance (Ord x, Generic x) => Generic (Interval x) where
-  type Rep (Interval x) = (Const (Levitated x, Extremum) :*: Const (Levitated x, Extremum))
+  type
+    Rep (Interval x) =
+      (Const (Levitated x, Extremum) :*: Const (Levitated x, Extremum))
+
+  from :: (Ord x, Generic x) => Interval x -> Rep (Interval x) x1
   from = \case
     l :<->: u -> (Const (l, Infimum) :*: Const (u, Supremum))
     l :|->: u -> (Const (l, Minimum) :*: Const (u, Supremum))
     l :<-|: u -> (Const (l, Infimum) :*: Const (u, Maximum))
     l :|-|: u -> (Const (l, Minimum) :*: Const (u, Maximum))
+
+  to :: (Ord x, Generic x) => Rep (Interval x) x1 -> Interval x
   to (Const l :*: Const u) = l ... u
 
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
@@ -539,9 +613,7 @@ itraverseLev f = \case
   l :<-|: u -> liftA2 (:<-|:) (f l) (f u)
   l :|-|: u -> liftA2 (:|-|:) (f l) (f u)
 
--- | Get the @(lower, upper)@ 'bounds' of an 'Interval'.
---
--- c.f. 'lower', 'upper'.
+-- | Get the @('lower', 'upper')@ bounds of an 'Interval'.
 bounds :: Interval x -> (SomeBound (Levitated x), SomeBound (Levitated x))
 bounds = \case
   l :<-->: u -> (SomeBound l, SomeBound u)
@@ -654,6 +726,69 @@ converseAdjacency = \case
   MetBy i j k -> Meets i j k
   After i j -> Before i j
 
+-- | Calculate the 'Adjacency' between two intervals, according to
+-- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
+adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency x
+adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
+  (LT, LT) -> case unSomeBound ub1 `compare` unSomeBound lb2 of
+    LT -> Before i1 i2
+    EQ -> case (ub1, lb2) of
+      (SomeBound (Max _), SomeBound (Min _)) ->
+        Meets
+          (openUpper i1)
+          (interval lb2 ub1)
+          (openLower i2)
+      _ -> Before i1 i2
+    GT ->
+      Overlaps
+        (interval lb1 (oppose lb2))
+        (interval lb2 ub1)
+        (interval (oppose ub1) ub2)
+  (LT, EQ) ->
+    Finishes
+      (interval lb1 (oppose lb2))
+      i2
+  (LT, GT) ->
+    Contains
+      (interval lb1 (oppose lb2))
+      (interval lb2 ub2)
+      (interval (oppose ub2) ub1)
+  (EQ, LT) ->
+    Starts
+      i1
+      (interval (oppose ub1) ub2)
+  (EQ, EQ) -> Identical i1
+  (EQ, GT) ->
+    StartedBy
+      i2
+      (interval (oppose ub2) ub1)
+  (GT, LT) ->
+    During
+      (interval lb2 (oppose lb1))
+      (interval lb1 ub1)
+      (interval (oppose ub1) ub2)
+  (GT, EQ) ->
+    FinishedBy
+      (interval lb2 (oppose lb1))
+      i1
+  (GT, GT) -> case unSomeBound ub2 `compare` unSomeBound lb1 of
+    GT ->
+      OverlappedBy
+        (interval lb2 (oppose lb1))
+        (interval lb1 ub2)
+        (interval (oppose ub2) ub1)
+    EQ -> case (ub2, lb1) of
+      (SomeBound (Max _), SomeBound (Min _)) ->
+        MetBy
+          (openUpper i2)
+          (interval lb1 ub2)
+          (openLower i1)
+      _ -> After i2 i1
+    LT -> After i2 i1
+ where
+  (lb1, ub1) = bounds i1
+  (lb2, ub2) = bounds i2
+
 -- | Get the convex hull of two intervals.
 --
 -- >>> hull (7 :|>: 8) (3 :|>: 4)
@@ -663,24 +798,24 @@ converseAdjacency = \case
 -- (Bottom :<->: Levitate 5)
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
 hull i1 i2 = case adjacency i1 i2 of
-  Before i j -> lowerBound i ... upperBound j
-  Meets i _ k -> lowerBound i ... upperBound k
-  Overlaps i _ k -> lowerBound i ... upperBound k
-  Starts i j -> lowerBound i ... upperBound j
-  During i _ k -> lowerBound i ... upperBound k
-  Finishes i j -> lowerBound i ... upperBound j
+  Before i j -> interval (lower i) (upper j)
+  Meets i _ k -> interval (lower i) (upper k)
+  Overlaps i _ k -> interval (lower i) (upper k)
+  Starts i j -> interval (lower i) (upper j)
+  During i _ k -> interval (lower i) (upper k)
+  Finishes i j -> interval (lower i) (upper j)
   Identical i -> i
-  FinishedBy i j -> lowerBound i ... upperBound j
-  Contains i _ k -> lowerBound i ... upperBound k
-  StartedBy i j -> lowerBound i ... upperBound j
-  OverlappedBy i _ k -> lowerBound i ... upperBound k
-  MetBy i _ k -> lowerBound i ... upperBound k
-  After i j -> lowerBound i ... upperBound j
+  FinishedBy i j -> interval (lower i) (upper j)
+  Contains i _ k -> interval (lower i) (upper k)
+  StartedBy i j -> interval (lower i) (upper j)
+  OverlappedBy i _ k -> interval (lower i) (upper k)
+  MetBy i _ k -> interval (lower i) (upper k)
+  After i j -> interval (lower i) (upper j)
 
 -- | Get the convex hull of a non-empty list of intervals.
 hulls :: (Ord x) => NonEmpty (Interval x) -> Interval x
 hulls (i :| []) = i
-hulls (i :| j : is) = hulls $ hull i j :| is
+hulls (i :| j : is) = hulls (hull i j :| is)
 
 -- | Test whether a point is contained in the interval.
 within :: (Ord x) => x -> Interval x -> Bool
@@ -705,7 +840,7 @@ imin = \case
   (x :|-|: _) -> Just x
   _ -> Nothing
 
--- | Get the maximum of an interval if it exists.
+-- | Get the maximum of an interval, if it exists.
 imax :: (Ord x) => Interval x -> Maybe (Levitated x)
 imax = \case
   (_ :<-|: x) -> Just x
@@ -778,73 +913,9 @@ setUpper x = \case
   l :|->: _ -> l :|->: x
   l :|-|: _ -> l :|-|: x
 
--- | Calculate the 'Adjacency' between two intervals, according to
--- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
-adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency x
-adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
-  (LT, LT) -> case unSomeBound ub1 `compare` unSomeBound lb2 of
-    LT -> Before i1 i2
-    EQ -> case (ub1, lb2) of
-      (SomeBound (Max _), SomeBound (Min _)) ->
-        Meets
-          (openUpper i1)
-          (interval lb2 ub1)
-          (openLower i2)
-      _ -> Before i1 i2
-    GT ->
-      Overlaps
-        (interval lb1 (oppose lb2))
-        (interval lb2 ub1)
-        (interval (oppose ub1) ub2)
-  (LT, EQ) ->
-    Finishes
-      (interval lb1 (oppose lb2))
-      i2
-  (LT, GT) ->
-    Contains
-      (interval lb1 (oppose lb2))
-      (interval lb2 ub2)
-      (interval (oppose ub2) ub1)
-  (EQ, LT) ->
-    Starts
-      i1
-      (interval (oppose ub1) ub2)
-  (EQ, EQ) -> Identical i1
-  (EQ, GT) ->
-    StartedBy
-      i2
-      (interval (oppose ub2) ub1)
-  (GT, LT) ->
-    During
-      (interval lb2 (oppose lb1))
-      (interval lb1 ub1)
-      (interval (oppose ub1) ub2)
-  (GT, EQ) ->
-    FinishedBy
-      (interval lb2 (oppose lb1))
-      i1
-  (GT, GT) -> case unSomeBound ub2 `compare` unSomeBound lb1 of
-    GT ->
-      OverlappedBy
-        (interval lb2 (oppose lb1))
-        (interval lb1 ub2)
-        (interval (oppose ub2) ub1)
-    EQ -> case (ub2, lb1) of
-      (SomeBound (Max _), SomeBound (Min _)) ->
-        MetBy
-          (openUpper i2)
-          (interval lb1 ub2)
-          (openLower i1)
-      _ -> After i2 i1
-    LT -> After i2 i1
- where
-  (lb1, ub1) = bounds i1
-  (lb2, ub2) = bounds i2
-
 -- | Calculate the intersection of two intervals, if it exists.
 --
 -- @
---
 -- >>> intersect (2 :<>: 4) (3 :||: 5)
 -- Just (3 :|>: 4)
 --
@@ -853,7 +924,6 @@ adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
 --
 -- >>> intersect (1 :<>: 4) (2 :||: 3)
 -- Just (2 :||: 3)
---
 -- @
 intersect ::
   forall x.
@@ -879,13 +949,11 @@ intersect i1 i2 = case adjacency i1 i2 of
 -- | Get the union of two intervals, as either 'OneOrTwo'.
 --
 -- @
---
 -- >>> union (2 :||: 5) (5 :<>: 7)
--- One (Levitate 2 :|->: Levitate 7)
+-- One (2 :|>: 7)
 --
 -- >>> union (2 :||: 4) (5 :<>: 7)
--- Two (Levitate 2 :|-|: Levitate 4) (Levitate 5 :<->: Levitate 7)
---
+-- Two (2 :||: 4) (5 :<>: 7)
 -- @
 union ::
   forall x.
@@ -895,21 +963,21 @@ union ::
   OneOrTwo (Interval x)
 union i1 i2 = case adjacency i1 i2 of
   Before i j
-    | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
+    | fst (upperBound i) == fst (lowerBound j) -> One (hull i j)
     | otherwise -> Two i j
-  Meets i _ k -> One $ hull i k
-  Overlaps i _ k -> One $ hull i k
-  Starts i j -> One $ hull i j
-  During i _ k -> One $ hull i k
-  Finishes i j -> One $ hull i j
+  Meets i _ k -> One (hull i k)
+  Overlaps i _ k -> One (hull i k)
+  Starts i j -> One (hull i j)
+  During i _ k -> One (hull i k)
+  Finishes i j -> One (hull i j)
   Identical i -> One i
-  FinishedBy i j -> One $ hull i j
-  Contains i _ k -> One $ hull i k
-  StartedBy i j -> One $ hull i j
-  OverlappedBy i _ k -> One $ hull i k
-  MetBy i _ k -> One $ hull i k
+  FinishedBy i j -> One (hull i j)
+  Contains i _ k -> One (hull i k)
+  StartedBy i j -> One (hull i j)
+  OverlappedBy i _ k -> One (hull i k)
+  MetBy i _ k -> One (hull i k)
   After i j
-    | fst (upperBound i) == fst (lowerBound j) -> One $ hull i j
+    | fst (upperBound i) == fst (lowerBound j) -> One (hull i j)
     | otherwise -> Two i j
 
 -- | /O(n log n)/. Get the union of a list of intervals.
@@ -931,20 +999,15 @@ unionsAsc = \case
 -- | Take the complement of the interval, as possibly 'OneOrTwo'.
 --
 -- @
---
 -- >>> complement (3 :<>: 4)
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
---
 -- @
 --
--- Note that infinitely-open intervals will return the points at infinity
--- toward which they are infinite in their result:
---
+-- Note that infinitely-open intervals will include in their result
+-- the points at infinity toward which they are infinite:
 -- @
---
 -- >>> complement (Levitate 3 :<->: Top)
 -- Just (Two (Bottom :|-|: Levitate 3) (Top :|-|: Top))
---
 -- @
 complement ::
   forall x.
@@ -971,19 +1034,17 @@ complement = \case
 -- | Remove all points of the second interval from the first.
 --
 -- @
---
 -- >>> difference Whole (3 :<>: 4)
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
 --
--- >>> difference (1 :<>: 4) (2 :||: 3)
--- Just (Two (1 :<>: 2) (3 :<>: 4))
+-- >>> difference (1 :<>: 4) (2 :||: 5)
+-- Just (One (1 :<>: 2))
 --
 -- >>> difference (1 :|>: 4) (0 :||: 1)
 -- Just (One (1 :<>: 4))
 --
 -- >>> difference (1 :<>: 4) (0 :||: 1)
 -- Just (One (1 :<>: 4))
---
 -- @
 difference ::
   forall x.
@@ -1019,13 +1080,11 @@ difference i1 i2 = case adjacency i1 i2 of
 -- | The difference of the union and intersection of two intervals.
 --
 -- @
---
 -- >>> symmetricDifference Whole (3 :<>: 4)
 -- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
 --
--- >>> symmetricDifference (1 :<>: 4) (2 :||: 3)
--- Just (Two (1 :<>: 2) (3 :<>: 4))
---
+-- >>> symmetricDifference (1 :<>: 4) (2 :||: 5)
+-- Just (Two (1 :<>: 2) (4 :||: 5))
 -- @
 symmetricDifference ::
   forall x.
@@ -1039,16 +1098,14 @@ symmetricDifference i1 i2 = case i1 `union` i2 of
     Nothing -> Just (One u)
     Just i -> difference u i
 
--- | Get the measure of an interval.
+-- | Get the measure of an interval, or 'Nothing' if the interval is infinite.
 --
 -- @
---
 -- >>> measure (-1 :<>: 1)
 -- Just 2
 --
 -- >>> measure (Bottom :<->: Levitate 1)
 -- Nothing
---
 -- @
 measure :: forall x. (Ord x, Num x) => Interval x -> Maybe x
 measure = measuring subtract
@@ -1056,17 +1113,13 @@ measure = measuring subtract
 -- | Apply a function to the lower, then upper, endpoint of an interval.
 --
 -- @
---
--- >>> measuring max (-1 :<>: 1)
--- Just 1
---
--- >>> measuring min (-1 :<>: 1)
+-- >>> measuring const (-1 :<>: 1)
 -- Just (-1)
 --
 -- >>> measuring (*) (4 :<>: 6)
 -- Just 24
---
 -- @
+-- > measure == measuring subtract
 measuring ::
   forall y x.
   (Ord x, Num y) =>
@@ -1079,16 +1132,14 @@ measuring f = \case
     | l == u -> Just 0
     | otherwise -> Nothing
 
--- | Get the distance between two intervals, or 0 if they adjacency.
+-- | Get the distance between two intervals.
 --
 -- @
---
 -- >>> hausdorff (3 :<>: 5) (6 :<>: 7)
 -- Just 1
 --
 -- >>> hausdorff (3 :<>: 5) Whole
 -- Just 0
---
 -- @
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
