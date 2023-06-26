@@ -1,5 +1,14 @@
 # Revision history for interval-patterns
 
+## 0.7.0.3
+
+* update `lattice` version range to build on new stackage LTS
+
+## 0.7.0.2
+
+* fix bug in `Data.Interval.hull`
+* improve documentation of `Data.Interval`
+
 ## 0.7.0.1
 
 * use `heaps` to improve performance of `Layers` at the cost of an `Ord` constraint on the "height" of the layers

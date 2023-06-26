@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               interval-patterns
-version:            0.7.0.2
+version:            0.7.0.3
 author:             Melanie Brown
 synopsis:           Intervals, and monoids thereof
 category:           Algebra, Charts, Data Structures, Math, Statistics
@@ -20,7 +20,7 @@ common interval-patterns
     , containers
     , groups       >=0.5.3   && <0.6
     , heaps        >=0.4     && <0.5
-    , lattices     >=2.0.3   && <2.1
+    , lattices     >=2.1     && <3
     , semirings    >=0.6     && <0.7
     , time
     , time-compat  >=1.9.6.1 && <1.10
