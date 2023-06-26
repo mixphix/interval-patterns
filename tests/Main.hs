@@ -15,6 +15,8 @@ import Data.Interval (
   pattern (:||:),
  )
 import Data.Interval.Borel qualified as Borel
+import Data.Interval.Layers qualified as Layers
+import Data.Semigroup
 import GHC.TypeNats
 import Test.Hspec
 import Test.QuickCheck
@@ -24,10 +26,10 @@ type family Ints (n :: Nat) x where
   Ints n x = Int -> Ints (n - 1) x
 
 main :: IO ()
-main = hspec $ do
-  describe "smart constructors" $ do
-    it "orient finite intervals" $ do
-      property @(Ints 2 _) $ \x y -> do
+main = hspec do
+  describe "smart constructors" do
+    it "orient finite intervals" do
+      property @(Ints 2 _) \x y -> do
         if x <= y
           then do
             (x :<>: y) `shouldBe` (x :<>: y)
@@ -48,13 +50,13 @@ main = hspec $ do
             (Levitate x :<-|: Levitate y) `shouldBe` (Levitate y :|->: Levitate x)
             (Levitate x :|-|: Levitate y) `shouldBe` (Levitate y :|-|: Levitate x)
 
-    it "orient infinite intervals" $ do
+    it "orient infinite intervals" do
       (Top :<->: Bottom) `shouldBe` (Bottom :<->: Top :: Interval Int)
       (Top :|->: Bottom) `shouldBe` (Bottom :<-|: Top :: Interval Int)
       (Top :<-|: Bottom) `shouldBe` (Bottom :|->: Top :: Interval Int)
       (Top :|-|: Bottom) `shouldBe` (Bottom :|-|: Top :: Interval Int)
 
-    it "close point intervals" $ do
+    it "close point intervals" do
       property @(Int -> _) $ \x -> do
         (x :<>: x) `shouldBe` (x :||: x)
         (x :|>: x) `shouldBe` (x :||: x)
@@ -65,15 +67,23 @@ main = hspec $ do
         (Levitate x :<-|: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
         (Levitate x :|-|: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
 
-  describe "Borel intervals" $ do
-    it "(<>) is commutative" $ do
-      property @(Ints 4 _) $ \a b x y -> do
+  describe "Borel intervals" do
+    it "(<>) is commutative" do
+      property @(Ints 4 _) \a b x y -> do
         let abxy = Borel.singleton (a :<>: b) <> Borel.singleton (x :<>: y)
             xyab = Borel.singleton (x :<>: y) <> Borel.singleton (a :<>: b)
         abxy `shouldBe` xyab
-    it "(<>) is associative" $ do
-      property @(Ints 6 _) $ \a b m n x y -> do
+    it "(<>) is associative" do
+      property @(Ints 6 _) \a b m n x y -> do
         let ab = Borel.singleton (a :<>: b)
             mn = Borel.singleton (m :<>: n)
             xy = Borel.singleton (x :<>: y)
         (ab <> mn) <> xy `shouldBe` ab <> (mn <> xy)
+
+  describe "Layers" do
+    it "(<>) is associative" do
+      property @(Ints 9 _) \a b c d e f x y z -> do
+        let abx = Layers.singleton (a :<>: b) (Sum x)
+            cdy = Layers.singleton (c :||: d) (Sum y)
+            efz = Layers.singleton (e :<>: f) (Sum z)
+        (abx <> cdy) <> efz `shouldBe` abx <> (cdy <> efz)
