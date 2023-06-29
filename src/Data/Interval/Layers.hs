@@ -29,8 +29,15 @@ import Data.Foldable qualified as Foldable
 import Data.Group (Group (..))
 import Data.Heap (Heap)
 import Data.Heap qualified as Heap
-import Data.Interval (Adjacency (..), Interval, OneOrTwo (..), pattern Whole, pattern (:---:), pattern (:<>:))
-import Data.Interval qualified as I
+import Data.Interval (
+  Adjacency (..),
+  Interval,
+  OneOrTwo (..),
+  pattern Whole,
+  pattern (:---:),
+  pattern (:<>:),
+ )
+import Data.Interval qualified as Interval
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
 import Data.Map.Strict (Map)
@@ -44,14 +51,17 @@ newtype Layers x y = Layers (Map (Interval x) y)
   deriving (Eq, Ord, Show, Functor, Generic, Typeable, Data)
 
 instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
+  (<>) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Layers x y -> Layers x y
   Layers s1 <> Layers s2 =
-    let s = Map.toAscList $ Map.unionWith (<>) s1 s2
-     in Layers $ Map.fromList (nestingsAsc $ Heap.fromList s)
+    Layers . Map.fromList . nestingsAsc . Heap.fromList $
+      Map.toAscList (Map.unionWith (<>) s1 s2)
 
 instance (Ord x, Ord y, Semigroup y) => Monoid (Layers x y) where
+  mempty :: (Ord x, Ord y, Semigroup y) => Layers x y
   mempty = Layers mempty
 
 instance (Ord x, Ord y, Group y) => Group (Layers x y) where
+  invert :: (Ord x, Ord y, Group y) => Layers x y -> Layers x y
   invert (Layers s) = Layers (fmap invert s)
 
 -- | A blank canvas.
@@ -103,7 +113,7 @@ dig y ix = insert ix (invert y)
 remove :: (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
 remove ix (Layers s) =
   Map.foldlWithKey'
-    ( \acc jx y -> case jx I.\\ ix of
+    ( \acc jx y -> case jx Interval.\\ ix of
         Nothing -> acc
         Just (One kx) -> acc <> singleton kx y
         Just (Two kx lx) -> acc <> fromList [(kx, y), (lx, y)]
@@ -125,10 +135,11 @@ difference layers (Layers s) =
   foldr (uncurry (flip dig)) layers (Map.toAscList s)
 
 -- | Restrict the range of the 'Layers' to the given 'Interval'.
-truncate :: (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
+truncate ::
+  (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
 truncate ix (Layers s) =
   Map.foldlWithKey'
-    ( \acc jx y -> case I.intersect ix jx of
+    ( \acc jx y -> case Interval.intersect ix jx of
         Nothing -> acc
         Just x -> insert x y acc
     )
@@ -154,14 +165,14 @@ integrate diff hgt ix layers =
   let Layers (Map.assocs -> s) = layers \= ix
       f (jx, y) maccum = do
         acc <- maccum
-        d <- I.measuring diff jx
+        d <- Interval.measuring diff jx
         pure $ acc + d * hgt y
    in foldr f (Just 0) s
 
 -- | Get the thickness of the 'Layers' at a point.
 thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
 thickness x (Layers s) = case Map.lookupLE (x :<>: x) s of
-  Just (ix, y) | x `I.within` ix -> y
+  Just (ix, y) | x `Interval.within` ix -> y
   _ -> mempty
 
 -- | Where and how thick is the thickest 'Interval'?
@@ -201,7 +212,7 @@ nestingsAsc ::
   [(Interval x, y)]
 nestingsAsc heap = case firstTwo of
   Nothing -> Foldable.toList heap
-  Just ((i', iy), (j', jy), js) -> case I.adjacency i' j' of
+  Just ((i', iy), (j', jy), js) -> case Interval.adjacency i' j' of
     Before i j -> (i, iy) : nestingsAsc (Heap.insert (j, jy) js)
     Meets i j k ->
       (i, iy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, jy)] <> js)

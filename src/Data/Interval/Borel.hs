@@ -25,9 +25,13 @@ module Data.Interval.Borel (
 ) where
 
 import Algebra.Heyting (Heyting ((==>)))
-import Algebra.Lattice
+import Algebra.Lattice (
+  BoundedJoinSemiLattice (..),
+  BoundedMeetSemiLattice (..),
+  Lattice (..),
+ )
 import Control.Arrow ((>>>))
-import Data.Data
+import Data.Data (Data, Typeable)
 import Data.Foldable (fold)
 import Data.Functor ((<&>))
 import Data.Interval (Interval)
@@ -56,31 +60,47 @@ newtype Borel x = Borel (Set (Interval x))
   deriving (Eq, Ord, Show, Generic, Typeable, Data)
 
 instance (Ord x) => Semigroup (Borel x) where
+  (<>) :: (Ord x) => Borel x -> Borel x -> Borel x
   Borel is <> Borel js = Borel (unionsSet (is <> js))
 
 instance (Ord x) => Monoid (Borel x) where
+  mempty :: (Ord x) => Borel x
   mempty = Borel mempty
 
 instance (Ord x, Lattice x) => Lattice (Borel x) where
+  (\/) :: (Ord x, Lattice x) => Borel x -> Borel x -> Borel x
   (\/) = union
+
+  (/\) :: (Ord x, Lattice x) => Borel x -> Borel x -> Borel x
   (/\) = intersection
 
 instance (Ord x, Lattice x) => BoundedMeetSemiLattice (Borel x) where
+  top :: (Ord x, Lattice x) => Borel x
   top = whole
 
 instance (Ord x, Lattice x) => BoundedJoinSemiLattice (Borel x) where
+  bottom :: (Ord x, Lattice x) => Borel x
   bottom = mempty
 
 instance (Ord x, Lattice x) => Heyting (Borel x) where
+  (==>) :: (Ord x, Lattice x) => Borel x -> Borel x -> Borel x
   x ==> y = complement x \/ y
 
 instance (Ord x, Lattice x) => Semiring (Borel x) where
+  plus :: (Ord x, Lattice x) => Borel x -> Borel x -> Borel x
   plus = symmetricDifference
+
+  times :: (Ord x, Lattice x) => Borel x -> Borel x -> Borel x
   times = intersection
+
+  zero :: (Ord x, Lattice x) => Borel x
   zero = mempty
+
+  one :: (Ord x, Lattice x) => Borel x
   one = whole
 
 instance (Ord x, Lattice x) => Ring (Borel x) where
+  negate :: (Ord x, Lattice x) => Borel x -> Borel x
   negate = complement
 
 -- | Consider the 'Borel' set identified by a list of 'Interval's.

@@ -25,8 +25,8 @@ import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Semigroup hiding (diff)
-import Data.Time.Compat
+import Data.Semigroup (Sum (..))
+import Data.Time.Compat (NominalDiffTime, UTCTime, diffUTCTime)
 import Data.Timeframe
 
 -- | An 'Event' is a collection of 'Timeframe's that keeps track of
@@ -62,9 +62,12 @@ newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
   deriving (Eq, Ord, Show, Typeable)
 
 instance (Ord ev, Ord n, Num n) => Semigroup (Calendar ev n) where
+  (<>) ::
+    (Ord ev, Ord n, Num n) => Calendar ev n -> Calendar ev n -> Calendar ev n
   Calendar a <> Calendar b = Calendar (Map.unionWith (<>) a b)
 
 instance (Ord ev, Ord n, Num n) => Monoid (Calendar ev n) where
+  mempty :: (Ord ev, Ord n, Num n) => Calendar ev n
   mempty = Data.Calendar.empty
 
 -- | The empty 'Calendar'.
@@ -80,7 +83,8 @@ calendar :: (Ord ev, Ord n, Num n) => ev -> Timeframe -> Calendar ev n
 calendar ev tf = singleton ev (Layers.singleton tf 1)
 
 -- | Insert an 'Event' of the given sort into a 'Calendar'.
-insert :: (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
+insert ::
+  (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
 insert ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
 
 -- |
@@ -95,7 +99,8 @@ Calendar c !? ev = c Map.!? ev
 (!) :: (Ord ev, Ord n, Num n) => Calendar ev n -> ev -> Event n
 Calendar c ! ev = fromMaybe mempty (c Map.!? ev)
 
-toList :: (Ord ev, Ord n, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
+toList ::
+  (Ord ev, Ord n, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
 toList (Calendar c) = fmap (fmap (fmap getSum) . Layers.toList) <$> Map.assocs c
 
 -- |
