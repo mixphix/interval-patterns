@@ -99,10 +99,12 @@ module Data.Interval (
 
 import Algebra.Lattice.Levitated (Levitated (..), foldLevitated)
 import Control.Applicative (liftA2)
+import Control.DeepSeq
 import Control.Monad (join)
 import Data.Data
 import Data.Function (on)
 import Data.Functor.Const (Const (Const))
+import Data.Hashable (Hashable (..))
 import Data.Kind (Constraint, Type)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -566,6 +568,18 @@ instance (Ord x, Generic x) => Generic (Interval x) where
 
   to :: (Ord x, Generic x) => Rep (Interval x) x1 -> Interval x
   to (Const l :*: Const u) = l ... u
+
+instance (Ord x, Hashable x) => Hashable (Interval x) where
+  hashWithSalt :: (Ord x, Hashable x) => Int -> Interval x -> Int
+  hashWithSalt s = \case
+    l :<->: u -> s `hashWithSalt` (1 :: Int) `hashWithSalt` l `hashWithSalt` u
+    l :|->: u -> s `hashWithSalt` (2 :: Int) `hashWithSalt` l `hashWithSalt` u
+    l :<-|: u -> s `hashWithSalt` (3 :: Int) `hashWithSalt` l `hashWithSalt` u
+    l :|-|: u -> s `hashWithSalt` (4 :: Int) `hashWithSalt` l `hashWithSalt` u
+
+instance (Ord x, NFData x) => NFData (Interval x) where
+  rnf :: (Ord x, NFData x) => Interval x -> ()
+  rnf (x :---: y) = x `seq` y `seq` ()
 
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
 -- prevent it from being a 'Functor', this will have to suffice.
