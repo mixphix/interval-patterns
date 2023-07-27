@@ -111,15 +111,11 @@ dig y ix = insert ix (invert y)
 
 -- | Completely remove an 'Interval' from the 'Layers'.
 remove :: (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
-remove ix (Layers s) =
-  Map.foldlWithKey'
-    ( \acc jx y -> case jx Interval.\\ ix of
-        Nothing -> acc
-        Just (One kx) -> acc <> singleton kx y
-        Just (Two kx lx) -> acc <> fromList [(kx, y), (lx, y)]
-    )
-    empty
-    s
+remove ix (Layers s) = flip (`Map.foldlWithKey'` empty) s \acc jx y ->
+  acc <> case jx Interval.\\ ix of
+    Nothing -> mempty
+    Just (One kx) -> singleton kx y
+    Just (Two kx lx) -> fromList [(kx, y), (lx, y)]
 
 -- | Fliped infix version of 'remove'.
 (\-) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Interval x -> Layers x y
@@ -138,13 +134,8 @@ difference layers (Layers s) =
 truncate ::
   (Ord x, Ord y, Semigroup y) => Interval x -> Layers x y -> Layers x y
 truncate ix (Layers s) =
-  Map.foldlWithKey'
-    ( \acc jx y -> case Interval.intersect ix jx of
-        Nothing -> acc
-        Just x -> insert x y acc
-    )
-    empty
-    s
+  flip (`Map.foldlWithKey'` empty) s \acc jx y ->
+    maybe id (`insert` y) (Interval.intersect ix jx) acc
 
 -- | Flipped infix version of 'truncate'.
 (\=) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Interval x -> Layers x y
@@ -170,35 +161,33 @@ integrate diff hgt ix layers =
    in foldr f (Just 0) s
 
 -- | Get the thickness of the 'Layers' at a point.
-thickness :: (Ord x, Monoid y) => x -> Layers x y -> y
+thickness :: (Ord x, Semigroup y) => x -> Layers x y -> Maybe y
 thickness x (Layers s) = case Map.lookupLE (x :<>: x) s of
-  Just (ix, y) | x `Interval.within` ix -> y
-  _ -> mempty
+  Just (ix, y) | x `Interval.within` ix -> Just y
+  _ -> Nothing
 
 -- | Where and how thick is the thickest 'Interval'?
 thickest :: (Ord x, Ord y) => Layers x y -> Maybe (Interval x, y)
 thickest (Layers s) =
-  Map.foldlWithKey'
-    ( \acc ix y -> Just $ case acc of
-        Nothing -> (ix, y)
-        Just (ix', y') -> if y > y' then (ix, y) else (ix', y')
-    )
-    Nothing
-    s
+  flip (`Map.foldlWithKey'` Nothing) s \acc ix y -> Just case acc of
+    Nothing -> (ix, y)
+    Just (_, y') | y > y' -> (ix, y)
+    Just (ix', y') -> (ix', y')
 
 -- | Convert the 'Layers' into a list of beginning-points and heights,
 -- that define a step function piecewise.
 toStepFunction :: (Ord x, Ord y, Monoid y) => Layers x y -> [(Levitated x, y)]
-toStepFunction s = g (Data.Interval.Layers.toList $ baseline mempty s)
+toStepFunction = go . Data.Interval.Layers.toList
  where
-  g [(il :---: iu, iy), (j@(jl :---: Top), jy)]
-    | iu == jl = (il, iy) : g [(j, jy)]
-    | otherwise = (il, iy) : (iu, mempty) : g [(j, jy)]
-  g ((il :---: iu, iy) : (j@(jl :---: _), jy) : is)
-    | iu == jl = (il, iy) : g ((j, jy) : is)
-    | otherwise = (il, iy) : (iu, mempty) : g ((j, jy) : is)
-  g [] = []
-  g [(il :---: iu, iy)] = [(il, iy), (iu, mempty)]
+  go = \case
+    [(il :---: iu, iy), (j@(jl :---: Top), jy)]
+      | iu == jl -> (il, iy) : go [(j, jy)]
+      | otherwise -> (il, iy) : (iu, mempty) : go [(j, jy)]
+    (il :---: iu, iy) : (j@(jl :---: _), jy) : is
+      | iu == jl -> (il, iy) : go ((j, jy) : is)
+      | otherwise -> (il, iy) : (iu, mempty) : go ((j, jy) : is)
+    [(il :---: iu, iy)] -> [(il, iy), (iu, mempty)]
+    [] -> []
 
 nestings ::
   (Ord x, Ord y, Semigroup y) =>
