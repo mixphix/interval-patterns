@@ -17,12 +17,14 @@ description:
 common interval-patterns
   build-depends:
     , base         >=4.11    && <5
-    , containers
+    , containers   >=0.6.7   && <0.7
+    , deepseq      >=1.4.8   && <1.6
     , groups       >=0.5.3   && <0.6
+    , hashable     >=1.4.2   && <1.5
     , heaps        >=0.4     && <0.5
     , lattices     >=2.1     && <3
     , semirings    >=0.6     && <0.7
-    , time
+    , time         >=1.9.3   && <1.13
     , time-compat  >=1.9.6.1 && <1.10
 
   default-language:   GHC2021
