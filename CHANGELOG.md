@@ -1,5 +1,10 @@
 # Revision history for interval-patterns
 
+## 0.7.1
+
+* instances `Hashable` and `NFData` for `Interval`
+* relax constraint on `Data.Interval.Layers.thickness` to `Semigroup`
+
 ## 0.7.0.3
 
 * update `lattice` version range to build on new stackage LTS
