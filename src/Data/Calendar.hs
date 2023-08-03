@@ -114,6 +114,7 @@ happeningAt time (Data.Calendar.toList -> evs) =
 coalesce :: (Ord ev, Ord n, Num n) => Calendar ev n -> Event n
 coalesce (Calendar c) = fold c
 
+-- | Calculate the total length of a particular event across all occurrences.
 totalDuration ::
   forall ev n.
   (Ord ev, Real n) =>
