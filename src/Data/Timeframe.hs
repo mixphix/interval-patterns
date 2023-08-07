@@ -30,4 +30,4 @@ pureLocalTimeframe t1 t2 =
    in localTimeframeAt tz t1 t2
 
 duration :: Timeframe -> Maybe NominalDiffTime
-duration = measuring diffUTCTime
+duration = measuring (flip diffUTCTime)

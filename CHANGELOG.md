@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## Unreleased
+
+* fix sign of result in `Data.Timeframe.duration`
+
 ## 0.7.1
 
 * instances `Hashable` and `NFData` for `Interval`
