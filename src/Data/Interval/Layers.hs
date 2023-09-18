@@ -53,7 +53,7 @@ newtype Layers x y = Layers (Map (Interval x) y)
 instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
   (<>) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Layers x y -> Layers x y
   Layers s1 <> Layers s2 =
-    Layers . Map.fromList . nestingsAsc . Heap.fromList $
+    Layers . Map.fromAscList . nestingsAsc . Heap.fromList $
       Map.toAscList (Map.unionWith (<>) s1 s2)
 
 instance (Ord x, Ord y, Semigroup y) => Monoid (Layers x y) where
