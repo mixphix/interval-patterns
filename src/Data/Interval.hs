@@ -832,8 +832,8 @@ hulls (i :| []) = i
 hulls (i :| j : is) = hulls (hull i j :| is)
 
 -- | Test whether a point is contained in the interval.
-within :: (Ord x) => x -> Interval x -> Bool
-within (Levitate -> x) = \case
+within :: (Ord x) => Levitated x -> Interval x -> Bool
+within x = \case
   l :<->: u -> l < x && x < u
   l :<-|: u -> l < x && x <= u
   l :|->: u -> l <= x && x < u

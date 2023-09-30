@@ -30,7 +30,7 @@ import Algebra.Lattice (
   BoundedMeetSemiLattice (..),
   Lattice (..),
  )
-import Control.Arrow ((>>>))
+import Algebra.Lattice.Levitated (Levitated (..))
 import Data.Data (Data, Typeable)
 import Data.Foldable (fold)
 import Data.Functor ((<&>))
@@ -138,12 +138,10 @@ whole = singleton I.Whole
 -- Completely remove an 'Interval' from a 'Borel' set.
 -- Essentially the opposite of 'truncate'.
 remove :: (Ord x) => Interval x -> Borel x -> Borel x
-remove i (Borel is) =
-  flip foldMap is $
-    (I.\\ i) >>> \case
-      Nothing -> mempty
-      Just (One j) -> borel [j]
-      Just (Two j k) -> borel [j, k]
+remove i (Borel is) = flip foldMap is $ flip (.) (I.\\ i) \case
+  Nothing -> mempty
+  Just (One j) -> borel [j]
+  Just (Two j k) -> borel [j, k]
 
 -- | Flipped infix version of 'remove'.
 (\-) :: (Ord x) => Borel x -> Interval x -> Borel x
@@ -151,7 +149,7 @@ remove i (Borel is) =
 
 -- | Is this point 'I.within' any connected component of the 'Borel' set?
 member :: (Ord x) => x -> Borel x -> Bool
-member x (Borel is) = any (I.within x) is
+member x (Borel is) = any (I.within (Levitate x)) is
 
 -- | Is this point not 'I.within' any connected component of the 'Borel' set?
 notMember :: (Ord x) => x -> Borel x -> Bool

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * fix sign of result in `Data.Timeframe.duration`
+* generalize `within` and `thickness` to Levitated
 
 ## 0.7.1
 

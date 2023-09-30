@@ -35,7 +35,7 @@ import Data.Interval (
   OneOrTwo (..),
   pattern Whole,
   pattern (:---:),
-  pattern (:<>:),
+  pattern (:|-|:),
  )
 import Data.Interval qualified as Interval
 import Data.Interval.Borel (Borel)
@@ -53,8 +53,11 @@ newtype Layers x y = Layers (Map (Interval x) y)
 instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
   (<>) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Layers x y -> Layers x y
   Layers s1 <> Layers s2 =
-    Layers . Map.fromAscList . nestingsAsc . Heap.fromList $
-      Map.toAscList (Map.unionWith (<>) s1 s2)
+    Layers
+      . Map.fromAscList
+      . nestingsAsc
+      . Heap.fromList
+      $ Map.toAscList (Map.unionWith (<>) s1 s2)
 
 instance (Ord x, Ord y, Semigroup y) => Monoid (Layers x y) where
   mempty :: (Ord x, Ord y, Semigroup y) => Layers x y
@@ -161,8 +164,8 @@ integrate diff hgt ix layers =
    in foldr f (Just 0) s
 
 -- | Get the thickness of the 'Layers' at a point.
-thickness :: (Ord x, Semigroup y) => x -> Layers x y -> Maybe y
-thickness x (Layers s) = case Map.lookupLE (x :<>: x) s of
+thickness :: (Ord x, Semigroup y) => Levitated x -> Layers x y -> Maybe y
+thickness x (Layers s) = case Map.lookupLE (x :|-|: x) s of
   Just (ix, y) | x `Interval.within` ix -> Just y
   _ -> Nothing
 
@@ -206,30 +209,38 @@ nestingsAsc heap = case firstTwo of
     Meets i j k ->
       (i, iy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, jy)] <> js)
     Overlaps i j k ->
-      nestingsAsc $
-        Heap.fromList [(i, iy), (j, iy <> jy), (k, jy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy), (j, iy <> jy), (k, jy)]
+        <> js
     Starts i j ->
-      nestingsAsc $
-        Heap.fromList [(i, iy <> jy), (j, jy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy <> jy), (j, jy)]
+        <> js
     During i j k ->
-      nestingsAsc $
-        Heap.fromList [(i, jy), (j, iy <> jy), (k, jy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, jy), (j, iy <> jy), (k, jy)]
+        <> js
     Finishes i j ->
-      nestingsAsc $
-        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy), (j, iy <> jy)]
+        <> js
     Identical i -> nestingsAsc (Heap.insert (i, iy <> jy) js)
     FinishedBy i j ->
-      nestingsAsc $
-        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy), (j, iy <> jy)]
+        <> js
     Contains i j k ->
-      nestingsAsc $
-        Heap.fromList [(i, iy), (j, iy <> jy), (k, iy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy), (j, iy <> jy), (k, iy)]
+        <> js
     StartedBy i j ->
-      nestingsAsc $
-        Heap.fromList [(i, iy <> jy), (j, iy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, iy <> jy), (j, iy)]
+        <> js
     OverlappedBy i j k ->
-      nestingsAsc $
-        Heap.fromList [(i, jy), (j, iy <> jy), (k, iy)] <> js
+      nestingsAsc
+        $ Heap.fromList [(i, jy), (j, iy <> jy), (k, iy)]
+        <> js
     MetBy i j k ->
       (i, jy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, iy)] <> js)
     After i j -> (i, jy) : nestingsAsc (Heap.insert (j, iy) js)

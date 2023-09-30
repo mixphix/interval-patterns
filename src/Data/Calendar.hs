@@ -16,7 +16,7 @@ module Data.Calendar (
   totalDuration,
 ) where
 
-import Control.Applicative (liftA2)
+import Algebra.Lattice.Levitated (Levitated (..))
 import Data.Data (Typeable)
 import Data.Foldable (fold)
 import Data.Interval qualified as I
@@ -108,7 +108,10 @@ toList (Calendar c) = fmap (fmap (fmap getSum) . Layers.toList) <$> Map.assocs c
 -- at the given 'UTCTime' on this 'Calendar'?
 happeningAt :: (Ord ev, Ord n, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
 happeningAt time (Data.Calendar.toList -> evs) =
-  [(ev, n) | (ev, ns) <- evs, (_, n) <- filter (within time . fst) ns]
+  [ (ev, n)
+  | (ev, ns) <- evs
+  , (_, n) <- filter (within (Levitate time) . fst) ns
+  ]
 
 -- | Consider every kind of event the same, and observe the overall 'Layers'.
 coalesce :: (Ord ev, Ord n, Num n) => Calendar ev n -> Event n
