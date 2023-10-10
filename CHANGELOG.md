@@ -1,6 +1,6 @@
 # Revision history for interval-patterns
 
-## Unreleased
+## 0.7.2
 
 * fix sign of result in `Data.Timeframe.duration`
 * generalize `within` and `thickness` to Levitated

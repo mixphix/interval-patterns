@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               interval-patterns
-version:            0.7.1
+version:            0.7.2
 author:             Melanie Brown
 synopsis:           Intervals, and monoids thereof
 category:           Algebra, Charts, Data Structures, Math, Statistics
