@@ -209,38 +209,30 @@ nestingsAsc heap = case firstTwo of
     Meets i j k ->
       (i, iy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, jy)] <> js)
     Overlaps i j k ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy), (j, iy <> jy), (k, jy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy), (j, iy <> jy), (k, jy)] <> js
     Starts i j ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy <> jy), (j, jy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy <> jy), (j, jy)] <> js
     During i j k ->
-      nestingsAsc
-        $ Heap.fromList [(i, jy), (j, iy <> jy), (k, jy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, jy), (j, iy <> jy), (k, jy)] <> js
     Finishes i j ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy), (j, iy <> jy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
     Identical i -> nestingsAsc (Heap.insert (i, iy <> jy) js)
     FinishedBy i j ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy), (j, iy <> jy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy), (j, iy <> jy)] <> js
     Contains i j k ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy), (j, iy <> jy), (k, iy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy), (j, iy <> jy), (k, iy)] <> js
     StartedBy i j ->
-      nestingsAsc
-        $ Heap.fromList [(i, iy <> jy), (j, iy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, iy <> jy), (j, iy)] <> js
     OverlappedBy i j k ->
-      nestingsAsc
-        $ Heap.fromList [(i, jy), (j, iy <> jy), (k, iy)]
-        <> js
+      nestingsAsc do
+        Heap.fromList [(i, jy), (j, iy <> jy), (k, iy)] <> js
     MetBy i j k ->
       (i, jy) : nestingsAsc (Heap.fromList [(j, iy <> jy), (k, iy)] <> js)
     After i j -> (i, jy) : nestingsAsc (Heap.insert (j, iy) js)
