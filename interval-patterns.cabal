@@ -17,7 +17,7 @@ description:
 common interval-patterns
   build-depends:
     , base         >=4.11    && <5
-    , containers   >=0.6.7   && <0.7
+    , containers   >=0.6.7   && <0.8
     , deepseq      >=1.4.8   && <1.6
     , groups       >=0.5.3   && <0.6
     , hashable     >=1.4.2   && <1.5

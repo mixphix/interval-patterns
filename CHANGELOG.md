@@ -1,5 +1,9 @@
 # Revision history for interval-patterns
 
+## Unreleased
+
+* `newtype Shrink x = Shrink {getShrink :: Borel x}`, the monoid formed by `Borel.intersection` and `whole`
+
 ## 0.7.2
 
 * fix sign of result in `Data.Timeframe.duration`

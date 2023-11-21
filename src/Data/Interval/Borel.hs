@@ -22,6 +22,7 @@ module Data.Interval.Borel (
   intersections,
   hull,
   isSubsetOf,
+  Shrink (..),
 ) where
 
 import Algebra.Heyting (Heyting ((==>)))
@@ -202,3 +203,15 @@ hull (Borel js) = Set.minView js <&> \(i, is) -> I.hulls (i :| Set.toAscList is)
 
 isSubsetOf :: (Ord x) => Borel x -> Borel x -> Bool
 isSubsetOf is js = null $ difference is js
+
+-- | Newtype wrapper for the monoid under 'intersection'.
+newtype Shrink x = Shrink {getShrink :: Borel x}
+  deriving (Eq, Ord, Show, Generic, Typeable, Data)
+
+instance (Ord x) => Semigroup (Shrink x) where
+  (<>) :: (Ord x) => Shrink x -> Shrink x -> Shrink x
+  Shrink x <> Shrink y = Shrink (intersection x y)
+
+instance (Ord x) => Monoid (Shrink x) where
+  mempty :: (Ord x) => Shrink x
+  mempty = Shrink whole
