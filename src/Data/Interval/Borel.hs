@@ -56,7 +56,7 @@ import Prelude hiding (null, truncate)
 -- groups of intervals, such as for calculating the overall timespan
 -- of a group of events. However, it is agnostic of
 -- how many times each given point has been covered.
--- To keep track of this data, use 'Data.Interval.Layers'.
+-- To keep track of this data, use 'Data.Interval.Layers.Layers'.
 newtype Borel x = Borel (Set (Interval x))
   deriving (Eq, Ord, Show, Generic, Typeable, Data)
 
