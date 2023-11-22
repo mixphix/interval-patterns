@@ -1010,7 +1010,7 @@ unionsAsc = \case
     _ -> i : unionsAsc (j : is)
   x -> x
 
--- | Take the complement of the interval, as possibly 'OneOrTwo'.
+-- | Take the complement of the interval, as possibly 'OneOrTwo'. See also 'Data.Interval.Borel.complement'.
 --
 -- @
 -- >>> complement (3 :<>: 4)
