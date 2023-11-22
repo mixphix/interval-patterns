@@ -88,6 +88,12 @@ toList (Layers s) = Map.toList s
 squash :: (Ord x) => Layers x y -> Borel x
 squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 
+-- | Treating 'mempty' as sea level, consider the 'Borel' set of a provided
+-- 'Layers' that is "land".
+land :: (Ord x, Monoid y, Ord y) => Layers x y -> Borel x
+land (Layers s) = flip Map.foldMapWithKey s \i y ->
+  if y >= mempty then Borel.singleton i else mempty
+
 -- | @insert ix y l@ draws over @l@ a rectangle with base @ix@ of thickness @y@.
 insert ::
   (Ord x, Ord y, Semigroup y) =>
