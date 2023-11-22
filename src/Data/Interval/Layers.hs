@@ -1,5 +1,5 @@
 module Data.Interval.Layers (
-  Layers,
+  Layers (Layers),
   Data.Interval.Layers.fromList,
   Data.Interval.Layers.toList,
   empty,

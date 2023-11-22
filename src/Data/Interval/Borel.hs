@@ -1,5 +1,5 @@
 module Data.Interval.Borel (
-  Borel,
+  Borel (Borel),
   borel,
   intervalSet,
   Data.Interval.Borel.empty,
