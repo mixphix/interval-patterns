@@ -83,7 +83,7 @@ fromList = Layers . Map.fromList . nestings
 toList :: (Ord x) => Layers x y -> [(Interval x, y)]
 toList (Layers s) = Map.toList s
 
--- | Ignore the 'Layers' and focus only on whether points are 'within'
+-- | Ignore the 'Layers' and focus only on whether points are 'Data.Interval.within'
 -- any contained 'Interval' or not.
 squash :: (Ord x) => Layers x y -> Borel x
 squash (Layers s) = foldMap Borel.singleton (Map.keys s)
