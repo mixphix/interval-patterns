@@ -192,9 +192,7 @@ intersection is (Borel js) = foldMap (`truncate` is) js
 
 -- | Take the intersection of a list of 'Borel' sets.
 intersections :: (Ord x) => [Borel x] -> Borel x
-intersections [] = mempty
-intersections [i] = i
-intersections (i : j : js) = intersection (intersection i j) (intersections js)
+intersections = getShrink . foldMap Shrink
 
 -- | Take the smallest spanning 'Interval' of a 'Borel' set,
 -- provided that it is not the empty set.
