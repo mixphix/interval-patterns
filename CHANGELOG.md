@@ -3,6 +3,7 @@
 ## Unreleased
 
 * `newtype Shrink x = Shrink {getShrink :: Borel x}`, the monoid formed by `Borel.intersection` and `whole`
+* `landAbove :: (Ord x, Ord y) => y -> Layers x y -> Borel x` above "sea level"
 * `land :: (Ord x, Monoid y, Ord y) => Layers x y -> Borel x` above a "sea level" of `mempty`
 
 ## 0.7.2
