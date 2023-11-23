@@ -7,6 +7,7 @@ module Data.Interval.Layers (
   insert,
   pile,
   squash,
+  land,
   thickness,
   thickest,
   dig,
@@ -90,9 +91,12 @@ squash (Layers s) = foldMap Borel.singleton (Map.keys s)
 
 -- | Treating 'mempty' as sea level, consider the 'Borel' set of a provided
 -- 'Layers' that is "land".
+--
+-- An improvement over 'squash' in that it will not return 'I.Whole'
+-- if 'baseline' or some involved interval calculations have been used.
 land :: (Ord x, Monoid y, Ord y) => Layers x y -> Borel x
 land (Layers s) = flip Map.foldMapWithKey s \i y ->
-  if y >= mempty then Borel.singleton i else mempty
+  if y > mempty then Borel.singleton i else Borel.empty
 
 -- | @insert ix y l@ draws over @l@ a rectangle with base @ix@ of thickness @y@.
 insert ::
