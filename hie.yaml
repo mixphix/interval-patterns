@@ -1,7 +1,2 @@
 cradle:
   cabal:
-    - path: "src"
-      component: "lib:interval-patterns"
-
-    - path: "tests"
-      component: "interval-patterns:test:tests"

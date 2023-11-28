@@ -64,3 +64,5 @@ test-suite tests
     , hspec
     , interval-patterns
     , QuickCheck
+    , parsec
+    , text
