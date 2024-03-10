@@ -6,6 +6,7 @@
 * `landAbove :: (Ord x, Ord y) => y -> Layers x y -> Borel x` above "sea level"
 * `land :: (Ord x, Monoid y, Ord y) => Layers x y -> Borel x` above a "sea level" of `mempty`
 * remove unnecessary `Lattice` constraints on the endpoints of `Borel` sets
+* fix `Constr` definitions having an extra `-` character
 
 ## 0.7.2
 

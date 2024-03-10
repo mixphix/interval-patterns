@@ -514,7 +514,7 @@ intervalOpenOpenConstr :: Constr
 intervalOpenOpenConstr =
   mkConstr
     intervalDataType
-    ":<--->:"
+    ":<-->:"
     []
     Infix
 
@@ -522,7 +522,7 @@ intervalClosedOpenConstr :: Constr
 intervalClosedOpenConstr =
   mkConstr
     intervalDataType
-    ":|--->:"
+    ":|-->:"
     []
     Infix
 
@@ -530,7 +530,7 @@ intervalOpenClosedConstr :: Constr
 intervalOpenClosedConstr =
   mkConstr
     intervalDataType
-    ":<---|:"
+    ":<--|:"
     []
     Infix
 
@@ -538,7 +538,7 @@ intervalClosedClosedConstr :: Constr
 intervalClosedClosedConstr =
   mkConstr
     intervalDataType
-    ":|---|:"
+    ":|--|:"
     []
     Infix
 
