@@ -26,7 +26,7 @@ module Data.Interval.Layers (
 ) where
 
 import Algebra.Lattice.Levitated (Levitated (Top))
-import Data.Data (Data, Typeable)
+import Data.Data (Data)
 import Data.Foldable qualified as Foldable
 import Data.Group (Group (..))
 import Data.Heap (Heap)
@@ -50,7 +50,7 @@ import Prelude hiding (truncate)
 -- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
-  deriving (Eq, Ord, Show, Functor, Generic, Typeable, Data)
+  deriving (Eq, Ord, Show, Functor, Generic, Data)
 
 instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
   (<>) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Layers x y -> Layers x y

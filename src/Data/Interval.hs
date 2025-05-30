@@ -118,7 +118,7 @@ data Extremum
   | Infimum
   | Supremum
   | Maximum
-  deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Data, Typeable)
+  deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Data)
 
 -- |
 -- The 'opposite' of an 'Extremum' is its complementary analogue:
@@ -552,8 +552,6 @@ intervalDataType =
     , intervalClosedClosedConstr
     ]
 
-deriving instance (Typeable x) => Typeable (Interval x)
-
 instance (Ord x, Generic x) => Generic (Interval x) where
   type
     Rep (Interval x) =
@@ -561,10 +559,10 @@ instance (Ord x, Generic x) => Generic (Interval x) where
 
   from :: (Ord x, Generic x) => Interval x -> Rep (Interval x) x1
   from = \case
-    l :<->: u -> (Const (l, Infimum) :*: Const (u, Supremum))
-    l :|->: u -> (Const (l, Minimum) :*: Const (u, Supremum))
-    l :<-|: u -> (Const (l, Infimum) :*: Const (u, Maximum))
-    l :|-|: u -> (Const (l, Minimum) :*: Const (u, Maximum))
+    l :<->: u -> Const (l, Infimum) :*: Const (u, Supremum)
+    l :|->: u -> Const (l, Minimum) :*: Const (u, Supremum)
+    l :<-|: u -> Const (l, Infimum) :*: Const (u, Maximum)
+    l :|-|: u -> Const (l, Minimum) :*: Const (u, Maximum)
 
   to :: (Ord x, Generic x) => Rep (Interval x) x1 -> Interval x
   to (Const l :*: Const u) = l ... u
@@ -721,7 +719,7 @@ data Adjacency x
   | OverlappedBy !(Interval x) !(Interval x) !(Interval x)
   | MetBy !(Interval x) !(Interval x) !(Interval x)
   | After !(Interval x) !(Interval x)
-  deriving (Eq, Ord, Show, Generic, Typeable, Data)
+  deriving (Eq, Ord, Show, Generic, Data)
 
 -- | The result of having compared the same two intervals in reverse order.
 converseAdjacency :: Adjacency x -> Adjacency x

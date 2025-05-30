@@ -3,7 +3,7 @@ module Data.OneOrTwo (
   oneOrTwo,
 ) where
 
-import Data.Data (Data, Typeable)
+import Data.Data (Data)
 import GHC.Generics (Generic)
 
 -- | Either one of something, or two of it.
@@ -19,7 +19,6 @@ data OneOrTwo x
     , Read
     , Generic
     , Data
-    , Typeable
     , Functor
     , Foldable
     , Traversable

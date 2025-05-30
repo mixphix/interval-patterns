@@ -3,6 +3,7 @@
 ##
 
 * `unBorel :: (Ord x) => Borel x -> [Interval x]`, the ordered list of intervals in the `Borel` set
+* remove explicit `Typeable` deriving
 
 ## 0.8.0
 

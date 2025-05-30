@@ -17,7 +17,6 @@ module Data.Calendar (
 ) where
 
 import Algebra.Lattice.Levitated (Levitated (..))
-import Data.Data (Typeable)
 import Data.Foldable (fold)
 import Data.Interval qualified as I
 import Data.Interval.Layers (Layers)
@@ -59,7 +58,7 @@ erlangs ix e =
 
 -- | A 'Calendar' is a map from a given event type to durations.
 newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
-  deriving (Eq, Ord, Show, Typeable)
+  deriving (Eq, Ord, Show)
 
 instance (Ord ev, Ord n, Num n) => Semigroup (Calendar ev n) where
   (<>) ::

@@ -33,7 +33,7 @@ import Algebra.Lattice (
   Lattice (..),
  )
 import Algebra.Lattice.Levitated (Levitated (..))
-import Data.Data (Data, Typeable)
+import Data.Data (Data)
 import Data.Foldable (fold)
 import Data.Functor ((<&>))
 import Data.Interval (Interval)
@@ -59,7 +59,7 @@ import Prelude hiding (null, truncate)
 -- how many times each given point has been covered.
 -- To keep track of this data, use 'Data.Interval.Layers.Layers'.
 newtype Borel x = Borel (Set (Interval x))
-  deriving (Eq, Ord, Show, Generic, Typeable, Data)
+  deriving (Eq, Ord, Show, Generic, Data)
 
 instance (Ord x) => Semigroup (Borel x) where
   (<>) :: (Ord x) => Borel x -> Borel x -> Borel x
@@ -209,7 +209,7 @@ isSubsetOf is js = null $ difference is js
 
 -- | Newtype wrapper for the monoid under 'intersection'.
 newtype Shrink x = Shrink {getShrink :: Borel x}
-  deriving (Eq, Ord, Show, Generic, Typeable, Data)
+  deriving (Eq, Ord, Show, Generic, Data)
 
 instance (Ord x) => Semigroup (Shrink x) where
   (<>) :: (Ord x) => Shrink x -> Shrink x -> Shrink x
