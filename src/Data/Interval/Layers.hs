@@ -7,6 +7,8 @@ module Data.Interval.Layers (
   insert,
   pile,
   squash,
+  squashing,
+  isquashing,
   land,
   landAbove,
   thickness,
@@ -28,6 +30,8 @@ module Data.Interval.Layers (
 import Algebra.Lattice.Levitated (Levitated (Top))
 import Data.Data (Data)
 import Data.Foldable qualified as Foldable
+import Data.Foldable.WithIndex (FoldableWithIndex, ifoldMap)
+import Data.Functor.WithIndex
 import Data.Group (Group (..))
 import Data.Heap (Heap)
 import Data.Heap qualified as Heap
@@ -44,13 +48,21 @@ import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Traversable.WithIndex (TraversableWithIndex (itraverse))
 import GHC.Generics (Generic)
 import Prelude hiding (truncate)
 
 -- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
-  deriving (Eq, Ord, Show, Functor, Generic, Data)
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic, Data)
+deriving newtype instance FunctorWithIndex (Interval x) (Layers x)
+deriving newtype instance FoldableWithIndex (Interval x) (Layers x)
+instance TraversableWithIndex (Interval x) (Layers x) where
+  itraverse ::
+    (Applicative f) =>
+    (Interval x -> a -> f b) -> Layers x a -> f (Layers x b)
+  itraverse f (Layers s) = Layers <$> itraverse f s
 
 instance (Ord x, Ord y, Semigroup y) => Semigroup (Layers x y) where
   (<>) :: (Ord x, Ord y, Semigroup y) => Layers x y -> Layers x y -> Layers x y
@@ -89,6 +101,14 @@ toList (Layers s) = Map.toList s
 -- any contained 'Interval' or not.
 squash :: (Ord x) => Layers x y -> Borel x
 squash (Layers s) = foldMap Borel.singleton (Map.keys s)
+
+-- | 'squash' together the intervals satisfying a predicate.
+squashing :: (Ord x) => (y -> Bool) -> Layers x y -> Borel x
+squashing = isquashing . const
+
+-- | Perform 'squashing' with a test that accepts the 'Interval' as an argument.
+isquashing :: (Ord x) => (Interval x -> y -> Bool) -> Layers x y -> Borel x
+isquashing f s = flip ifoldMap s \ix y -> if f ix y then Borel.singleton ix else Borel.empty
 
 -- | Treating 'mempty' as sea level, consider the 'Borel' set of a provided
 -- 'Layers' that is "land".
