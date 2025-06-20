@@ -2,6 +2,8 @@
 
 ##
 
+## 0.8.1
+
 * `unBorel :: (Ord x) => Borel x -> [Interval x]`, the ordered list of intervals in the `Borel` set
 * remove explicit `Typeable` deriving
 * add `(Functor|Foldable|Traversable)WithIndex` classes to `Layers`
