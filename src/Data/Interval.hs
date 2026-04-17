@@ -111,6 +111,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Ord (comparing)
 import GHC.Generics (Generic (..), type (:*:) (..))
+import Data.Bifunctor (second)
 
 -- | The kinds of extremum an interval can have.
 data Extremum
@@ -979,7 +980,7 @@ union ::
   OneOrTwo (Interval x)
 union i1 i2 = case adjacency i1 i2 of
   Before i j
-    | fst (upperBound i) == fst (lowerBound j) -> One (hull i j)
+    | second opposite (upperBound i) == lowerBound j -> One (hull i j)
     | otherwise -> Two i j
   Meets i _ k -> One (hull i k)
   Overlaps i _ k -> One (hull i k)
@@ -993,7 +994,7 @@ union i1 i2 = case adjacency i1 i2 of
   OverlappedBy i _ k -> One (hull i k)
   MetBy i _ k -> One (hull i k)
   After i j
-    | fst (upperBound i) == fst (lowerBound j) -> One (hull i j)
+    | second opposite (upperBound i) == lowerBound j -> One (hull i j)
     | otherwise -> Two i j
 
 -- | /O(n log n)/. Get the union of a list of intervals.
