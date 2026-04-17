@@ -5,6 +5,7 @@ module Data.Calendar (
   eventSize,
   erlangs,
   Calendar (..),
+  empty,
   singleton,
   calendar,
   insert,
@@ -16,119 +17,129 @@ module Data.Calendar (
   totalDuration,
 ) where
 
-import Algebra.Lattice.Levitated (Levitated (..))
-import Data.Foldable (fold)
+import Control.Applicative (liftA2)
+import Control.Block
+import Data.Eq
+import Data.Foldable (fold, foldr)
+import Data.Function
 import Data.Interval qualified as I
 import Data.Interval.Layers (Layers)
 import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Semigroup (Sum (..))
-import Data.Time.Compat (NominalDiffTime, UTCTime, diffUTCTime)
+import Data.Maybe
+import Data.Monoid (Monoid (..))
+import Data.Ord
+import Data.Ratio (Rational)
+import Data.Semigroup (Semigroup ((<>)))
+import Data.Time
 import Data.Timeframe
+import Data.Tuple
+import GHC.Show (Show)
+import Numeric.Natural (Natural)
+
+import Bolt.Math
 
 -- | An 'Event' is a collection of 'Timeframe's that keeps track of
 -- how deeply a particular interval has been overlapped.
 --
--- > type Event n = Layers UTCTime (Sum n)
-type Event n = Layers UTCTime (Sum n)
+-- > type Event = Layers UTCTime (Sum n)
+type Event = Layers UTCTime Natural
 
 -- | Make a new 'Event' from a 'Timeframe' with default thickness 1.
 --
 -- > event = eventSize 1
-event :: (Num n) => Timeframe -> Event n
-event = (`Layers.singleton` 1)
+event :: Timeframe -> Event
+event = (`Layers.singleton` fromNatural 1)
 
 -- | Make an 'Event' with the given size from a 'Timeframe'.
-eventSize :: (Num n) => n -> Timeframe -> Event n
-eventSize n = (`Layers.singleton` Sum n)
+eventSize :: Natural -> Timeframe -> Event
+eventSize = flip Layers.singleton
 
 -- |
 -- Measure the carried load of an 'Event' over a given 'Timeframe'.
 -- In other words: how many copies of you would you need, in order to attend
 -- all of the simultaneous happenings over a given span (on average)?
-erlangs :: (Real n) => Timeframe -> Event n -> Maybe Rational
+erlangs :: Timeframe -> Event -> Maybe Rational
 erlangs ix e =
-  let diff = fmap realToFrac <$> flip diffUTCTime
+  let diff = fmap (\(Nominal (Picoseconds x)) -> x) <$> flip diffUTCTime
    in liftA2
-        (/)
-        (Layers.integrate diff (realToFrac . getSum) ix e)
+        (/.)
+        (Layers.area diff toInteger ix e)
         (I.measuring diff ix)
 
 -- | A 'Calendar' is a map from a given event type to durations.
-newtype Calendar ev n = Calendar {getCalendar :: Map ev (Event n)}
+newtype Calendar ev = Calendar {getCalendar :: Map ev Event}
   deriving (Eq, Ord, Show)
 
-instance (Ord ev, Ord n, Num n) => Semigroup (Calendar ev n) where
-  (<>) ::
-    (Ord ev, Ord n, Num n) => Calendar ev n -> Calendar ev n -> Calendar ev n
+instance (Ord ev) => Semigroup (Calendar ev) where
+  (<>) :: Calendar ev -> Calendar ev -> Calendar ev
   Calendar a <> Calendar b = Calendar (Map.unionWith (<>) a b)
 
-instance (Ord ev, Ord n, Num n) => Monoid (Calendar ev n) where
-  mempty :: (Ord ev, Ord n, Num n) => Calendar ev n
-  mempty = Data.Calendar.empty
+instance (Ord ev) => Monoid (Calendar ev) where
+  mempty :: (Ord ev) => Calendar ev
+  mempty = Calendar Map.empty
 
 -- | The empty 'Calendar'.
-empty :: Calendar ev n
+empty :: Calendar ev
 empty = Calendar Map.empty
 
 -- | Make a 'Calendar' from an 'Event'.
-singleton :: (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n
+singleton :: (Ord ev) => ev -> Event -> Calendar ev
 singleton ev cvg = Calendar (Map.singleton ev cvg)
 
 -- | Make a 'Calendar' from a 'Timeframe'.
-calendar :: (Ord ev, Ord n, Num n) => ev -> Timeframe -> Calendar ev n
-calendar ev tf = singleton ev (Layers.singleton tf 1)
+calendar :: (Ord ev) => ev -> Timeframe -> Calendar ev
+calendar ev tf = singleton ev (Layers.singleton tf (fromNatural 1))
 
 -- | Insert an 'Event' of the given sort into a 'Calendar'.
 insert ::
-  (Ord ev, Ord n, Num n) => ev -> Event n -> Calendar ev n -> Calendar ev n
+  (Ord ev) => ev -> Event -> Calendar ev -> Calendar ev
 insert ev cvg (Calendar c) = Calendar (Map.insertWith (<>) ev cvg c)
 
 -- |
 -- Get the 'Event' corresponding to a given key,
 -- or 'Nothing' if the key is not present.
-(!?) :: (Ord ev, Ord n, Num n) => Calendar ev n -> ev -> Maybe (Event n)
+(!?) :: (Ord ev) => Calendar ev -> ev -> Maybe Event
 Calendar c !? ev = c Map.!? ev
 
 -- |
 -- Get the 'Event' corresponding to a given key,
 -- or 'mempty' if the key is not present.
-(!) :: (Ord ev, Ord n, Num n) => Calendar ev n -> ev -> Event n
+(!) :: (Ord ev) => Calendar ev -> ev -> Event
 Calendar c ! ev = fromMaybe mempty (c Map.!? ev)
 
 toList ::
-  (Ord ev, Ord n, Num n) => Calendar ev n -> [(ev, [(Interval UTCTime, n)])]
-toList (Calendar c) = fmap (fmap (fmap getSum) . Layers.toList) <$> Map.assocs c
+  (Ord ev) => Calendar ev -> [(ev, [(Interval UTCTime, Natural)])]
+toList (Calendar c) = fmap Layers.toList <$> Map.assocs c
 
 -- |
 -- What, and how many events are happening
 -- at the given 'UTCTime' on this 'Calendar'?
-happeningAt :: (Ord ev, Ord n, Num n) => UTCTime -> Calendar ev n -> [(ev, n)]
+happeningAt :: (Ord ev) => UTCTime -> Calendar ev -> [(ev, Natural)]
 happeningAt time (Data.Calendar.toList -> evs) =
   [ (ev, n)
   | (ev, ns) <- evs
-  , (_, n) <- filter (within (Levitate time) . fst) ns
+  , (_, n) <- filter (within (Meridian time) . fst) ns
   ]
 
 -- | Consider every kind of event the same, and observe the overall 'Layers'.
-coalesce :: (Ord ev, Ord n, Num n) => Calendar ev n -> Event n
+coalesce :: (Ord ev) => Calendar ev -> Event
 coalesce (Calendar c) = fold c
 
 -- | Calculate the total length of a particular event across all occurrences.
 totalDuration ::
-  forall ev n.
-  (Ord ev, Real n) =>
+  forall ev.
+  (Ord ev) =>
   ev ->
-  Calendar ev n ->
+  Calendar ev ->
   Maybe NominalDiffTime
 totalDuration ev (Calendar c) = case c Map.!? ev of
   Nothing -> Just 0
   Just is -> foldr f (Just 0) (Layers.toList is)
  where
-  f :: (Timeframe, Sum n) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
+  f :: (Timeframe, Natural) -> Maybe NominalDiffTime -> Maybe NominalDiffTime
   f _ Nothing = Nothing
-  f (tf, Sum n) (Just x) = case (realToFrac n *) <$> duration tf of
+  f (tf, n) (Just x) = case (toInteger n *.) <$> duration tf of
     Nothing -> Nothing
-    Just y -> Just (x + y)
+    Just (y :: NominalDiffTime) -> Just (x + y)

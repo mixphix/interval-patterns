@@ -3,10 +3,14 @@
 
 module Main where
 
-import Algebra.Lattice (Lattice (..))
-import Algebra.Lattice.Levitated (Levitated (..))
+import Bolt.Math.Lattice
+import Bolt.Math.Suspension (Suspension (..))
 import Control.Applicative
 import Control.Monad
+import Data.Bool
+import Data.Eq (Eq (..))
+import Data.Function
+import Data.Int (Int)
 import Data.Interval (
   Interval,
   pattern (:<->:),
@@ -23,14 +27,20 @@ import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
 import Data.Interval.Layers qualified as Layers
 import Data.List qualified as List
+import Data.Maybe
+import Data.Ord (Ord (..))
 import Data.Semigroup
+import GHC.Err (error)
 import GHC.TypeNats
+import System.IO
 import Test.Hspec
 import Test.QuickCheck
 import Text.Parsec (sepBy, try)
 import Text.Parsec.Char (char, digit, spaces, string)
 import Text.Parsec.Text (Parser)
 import Text.ParserCombinators.Parsec (choice)
+import Text.Read (read)
+import Text.Show (Show)
 
 type family Ints (n :: Nat) x where
   Ints 0 x = x
@@ -45,16 +55,16 @@ main = hspec do
         (x :|>: y) `shouldBe` (y :<|: x)
         (x :<|: y) `shouldBe` (y :|>: x)
         (x :||: y) `shouldBe` (y :||: x)
-        (Levitate x :<->: Levitate y) `shouldBe` (Levitate y :<->: Levitate x)
-        (Levitate x :|->: Levitate y) `shouldBe` (Levitate y :<-|: Levitate x)
-        (Levitate x :<-|: Levitate y) `shouldBe` (Levitate y :|->: Levitate x)
-        (Levitate x :|-|: Levitate y) `shouldBe` (Levitate y :|-|: Levitate x)
+        (Meridian x :<->: Meridian y) `shouldBe` (Meridian y :<->: Meridian x)
+        (Meridian x :|->: Meridian y) `shouldBe` (Meridian y :<-|: Meridian x)
+        (Meridian x :<-|: Meridian y) `shouldBe` (Meridian y :|->: Meridian x)
+        (Meridian x :|-|: Meridian y) `shouldBe` (Meridian y :|-|: Meridian x)
 
     it "orient infinite intervals" do
-      (Top :<->: Bottom) `shouldBe` (Bottom :<->: Top :: Interval Int)
-      (Top :|->: Bottom) `shouldBe` (Bottom :<-|: Top :: Interval Int)
-      (Top :<-|: Bottom) `shouldBe` (Bottom :|->: Top :: Interval Int)
-      (Top :|-|: Bottom) `shouldBe` (Bottom :|-|: Top :: Interval Int)
+      (North :<->: South) `shouldBe` (South :<->: North :: Interval Int)
+      (North :|->: South) `shouldBe` (South :<-|: North :: Interval Int)
+      (North :<-|: South) `shouldBe` (South :|->: North :: Interval Int)
+      (North :|-|: South) `shouldBe` (South :|-|: North :: Interval Int)
 
     it "close point intervals" do
       property @(Int -> _) \x -> do
@@ -62,10 +72,10 @@ main = hspec do
         (x :|>: x) `shouldBe` (x :||: x)
         (x :<|: x) `shouldBe` (x :||: x)
         (x :||: x) `shouldBe` (x :||: x)
-        (Levitate x :<->: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
-        (Levitate x :|->: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
-        (Levitate x :<-|: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
-        (Levitate x :|-|: Levitate x) `shouldBe` (Levitate x :|-|: Levitate x)
+        (Meridian x :<->: Meridian x) `shouldBe` (Meridian x :|-|: Meridian x)
+        (Meridian x :|->: Meridian x) `shouldBe` (Meridian x :|-|: Meridian x)
+        (Meridian x :<-|: Meridian x) `shouldBe` (Meridian x :|-|: Meridian x)
+        (Meridian x :|-|: Meridian x) `shouldBe` (Meridian x :|-|: Meridian x)
 
     it "intersect" do
       property @(Ints 4 _) \a b c d -> do
@@ -142,10 +152,10 @@ tk =
   tkVersion = spaces *> version <* spaces
   tkCmp =
     choice
-      [ (Bottom :<-|:) . Levitate <$ try do string "<="
-      , (Bottom :<->:) . Levitate <$ try do string "<"
-      , (:|->: Top) . Levitate <$ try do string ">="
-      , (:<->: Top) . Levitate <$ try do string ">"
+      [ (South :<-|:) . Meridian <$ try do string "<="
+      , (South :<->:) . Meridian <$ try do string "<"
+      , (:|->: North) . Meridian <$ try do string ">="
+      , (:<->: North) . Meridian <$ try do string ">"
       , Interval.point <$ try do string "=="
       ]
   tkOpen = TkOpen <$ (spaces *> string "(" <* spaces)
@@ -174,7 +184,7 @@ versionBounds = foldTk <$> many tk
 -- Right (Borel (fromList [(Version [2,0,0] :|>: Version [3])]))
 
 -- >>> Text.Parsec.parse versionBounds "" ">= 4"
--- Right (Borel (fromList [(Levitate (Version [4]) :|->: Top)]))
+-- Right (Borel (fromList [(Meridian (Version [4]) :|->: North)]))
 
 -- >>> Text.Parsec.parse versionBounds "" "(>= 1.2 && <3) || (>= 4.0 && < 5)"
 -- Right (Borel (fromList [(Version [1,2] :|>: Version [3]),(Version [4,0] :|>: Version [5])]))

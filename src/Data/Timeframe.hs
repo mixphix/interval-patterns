@@ -8,11 +8,14 @@ module Data.Timeframe (
 ) where
 
 import Control.Monad.IO.Class (MonadIO (..))
-import Data.Function (on)
+import Data.Function
 import Data.Functor ((<&>))
 import Data.Interval
+import Data.Maybe
 import Data.Time.Compat
 import GHC.IO (unsafePerformIO)
+
+import Bolt.Math
 
 -- | > type Timeframe = Interval UTCTime
 type Timeframe = Interval UTCTime
@@ -30,4 +33,4 @@ pureLocalTimeframe t1 t2 =
    in localTimeframeAt tz t1 t2
 
 duration :: Timeframe -> Maybe NominalDiffTime
-duration = measuring (flip diffUTCTime)
+duration = measuring (flip (-.))

@@ -1,0 +1,7 @@
+packages:
+  .
+  ../bolt
+  ../control-block
+allow-newer:
+  time-compat:time
+tests: true
