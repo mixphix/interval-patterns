@@ -2,6 +2,10 @@
 
 ##
 
+## 0.8.2
+
+* fix `Interval.union` of touching open intervals
+
 ## 0.8.1
 
 * `unBorel :: (Ord x) => Borel x -> [Interval x]`, the ordered list of intervals in the `Borel` set
