@@ -1,6 +1,8 @@
 # Revision history for interval-patterns
 
-##
+## Current
+
+* improve time complexity of `Data.Interval.Borel.member` from `O(n)` to `O(log n)`
 
 ## 0.8.2
 

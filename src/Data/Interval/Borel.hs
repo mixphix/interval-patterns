@@ -155,7 +155,9 @@ remove i (Borel is) = flip foldMap is $ flip (.) (I.\\ i) \case
 
 -- | Is this point 'I.within' any connected component of the 'Borel' set?
 member :: (Ord x) => x -> Borel x -> Bool
-member x (Borel is) = any (I.within (Levitate x)) is
+member x (Borel is) = case Set.lookupLE (x I.:||: x) is of
+  Nothing -> False
+  Just i -> Levitate x `I.within` i
 
 -- | Is this point not 'I.within' any connected component of the 'Borel' set?
 notMember :: (Ord x) => x -> Borel x -> Bool
