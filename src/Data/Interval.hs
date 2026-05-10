@@ -81,6 +81,7 @@ module Data.Interval (
   measuring,
   hausdorff,
   isSubsetOf,
+  clamp,
 
   -- * Bounds
   Extremum (..),
@@ -1190,3 +1191,9 @@ isSubsetOf i j = case adjacency i j of
   OverlappedBy{} -> False
   MetBy{} -> False
   After{} -> False
+
+clamp :: (Ord x) => x -> Interval x -> Levitated x
+clamp x (l :---: u)
+  | Levitate x < l = l
+  | Levitate x > u = u
+  | otherwise = Levitate x

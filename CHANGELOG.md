@@ -3,6 +3,7 @@
 ## Current
 
 * improve time complexity of `Data.Interval.Borel.member` from `O(n)` to `O(log n)`
+* add `clamp :: (Ord x) => x -> Interval x -> Levitated x`
 
 ## 0.8.2
 
