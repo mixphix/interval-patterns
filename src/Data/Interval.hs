@@ -11,6 +11,10 @@ module Data.Interval (
   -- ** Construction
 
   -- *** Finite intervals
+
+  -- |
+  -- These pattern synonyms perform /normalization/: for @b > a@,
+  -- the interval @b :?!: a@ becomes @a :!?: b@. Matching on @a :??: b@ guarantees @a <= b@.
   pattern (:<>:),
   pattern (:<|:),
   pattern (:|>:),
@@ -20,6 +24,9 @@ module Data.Interval (
   -- *** Possibly-infinite intervals
 
   -- |
+  -- These pattern synonyms perform /normalization/: for @b > a@,
+  -- the interval @b :?-!: a@ becomes @a :!-?: b@. Matching on @a :??: b@ guarantees @a <= b@.
+  --
   -- The first four form a @{-# COMPLETE #-}@ set of bidirectional patterns,
   -- and the final is a @{-# COMPLETE #-}@ unidirectional pattern on its own.
   pattern (:<->:),
@@ -191,45 +198,35 @@ instance (Ord x) => Ord (Bound ext (Levitated x)) where
 type Bounding :: Extremum -> Constraint
 class (Opposite (Opposite ext) ~ ext) => Bounding ext where
   type Opposite ext :: Extremum
-
   bound :: x -> Bound ext x
-
   -- | c.f. 'opposite'.
   opposeBound :: Bound ext x -> Bound (Opposite ext) x
 
 instance Bounding Minimum where
   type Opposite Minimum = Supremum
-
   bound :: x -> Bound Minimum x
   bound = Min
-
   opposeBound :: Bound Minimum x -> Bound Supremum x
   opposeBound (Min x) = Sup x
 
 instance Bounding Infimum where
   type Opposite Infimum = Maximum
-
   bound :: x -> Bound Infimum x
   bound = Inf
-
   opposeBound :: Bound Infimum x -> Bound Maximum x
   opposeBound (Inf x) = Max x
 
 instance Bounding Supremum where
   type Opposite Supremum = Minimum
-
   bound :: x -> Bound Supremum x
   bound = Sup
-
   opposeBound :: Bound Supremum x -> Bound Minimum x
   opposeBound (Sup x) = Min x
 
 instance Bounding Maximum where
   type Opposite Maximum = Infimum
-
   bound :: x -> Bound Maximum x
   bound = Max
-
   opposeBound :: Bound Maximum x -> Bound Infimum x
   opposeBound (Max x) = Inf x
 
@@ -339,6 +336,8 @@ infix 5 :|->:
 infix 5 :|-|:
 
 -- | A bidirectional pattern synonym matching open intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:<->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<->: u <-
   Inf l :<-->: Sup u
@@ -351,6 +350,8 @@ pattern l :<->: u <-
             _ -> Inf inf :<-->: Sup sup
 
 -- | A bidirectional pattern synonym matching open-closed intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:<-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :<-|: u <-
   Inf l :<--|: Max u
@@ -364,6 +365,8 @@ pattern l :<-|: u <-
             GT -> Min inf :|-->: Sup sup
 
 -- | A bidirectional pattern synonym matching closed-open intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:|->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :|->: u <-
   Min l :|-->: Sup u
@@ -377,6 +380,8 @@ pattern l :|->: u <-
             GT -> Inf inf :<--|: Max sup
 
 -- | A bidirectional pattern synonym matching closed intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:|-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
 pattern l :|-|: u <-
   Min l :|--|: Max u
@@ -401,6 +406,8 @@ infix 5 :|>:
 infix 5 :||:
 
 -- | A bidirectional pattern synonym matching finite open intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:<>:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :<>: u <-
   Levitate l :<->: Levitate u
@@ -413,6 +420,8 @@ pattern l :<>: u <-
             _ -> Inf inf :<-->: Sup sup
 
 -- | A bidirectional pattern synonym matching finite open-closed intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:<|:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :<|: u <-
   Levitate l :<-|: Levitate u
@@ -426,6 +435,8 @@ pattern l :<|: u <-
             GT -> Min inf :|-->: Sup sup
 
 -- | A bidirectional pattern synonym matching finite closed-open intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :|>: u <-
   Levitate l :|->: Levitate u
@@ -439,11 +450,13 @@ pattern l :|>: u <-
             GT -> Inf inf :<--|: Max sup
 
 -- | A bidirectional pattern synonym matching finite closed intervals.
+--
+-- This pattern synonym performs normalization.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :||: u <-
   Levitate l :|-|: Levitate u
   where
-    b1 :||: b2 = Min (Levitate $ min b1 b2) :|--|: Max (Levitate $ max b1 b2)
+    b1 :||: b2 = Min (Levitate (min b1 b2)) :|--|: Max (Levitate (max b1 b2))
 
 -- |
 -- A unidirectional pattern synonym matching finite intervals,
@@ -742,6 +755,15 @@ converseAdjacency = \case
 
 -- | Calculate the 'Adjacency' between two intervals, according to
 -- [Allen](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra).
+--
+-- Invariant: The arguments of the returned `Adjacency`
+-- are in increasing order and do not overlap. For example,
+--
+-- >>> adjacency (2 :|>: 4) (4 :<|: 6)
+-- Before (2 :|>: 4) (4 :<|: 6)
+--
+-- >>> adjacency (4 :||: 6) (2 :||: 4)
+-- MetBy (2 :|>: 4) (4 :||: 4) (4 :<|: 6)
 adjacency :: (Ord x) => Interval x -> Interval x -> Adjacency x
 adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
   (LT, LT) -> case unSomeBound ub1 `compare` unSomeBound lb2 of
@@ -1074,19 +1096,19 @@ difference ::
   Maybe (OneOrTwo (Interval x))
 difference i1 i2 = case adjacency i1 i2 of
   -- not commutative!!
-  Before i _ -> Just $ One i
-  Meets i _ _ -> Just $ One i
-  Overlaps i _ _ -> Just $ One i
+  Before i _ -> Just (One i)
+  Meets i _ _ -> Just (One i)
+  Overlaps i _ _ -> Just (One i)
   Starts{} -> Nothing
   During{} -> Nothing
-  Finishes i _ -> Just $ One i
+  Finishes i _ -> Just (One i)
   Identical{} -> Nothing
   FinishedBy{} -> Nothing
-  Contains i _ k -> Just $ Two i k
-  StartedBy _ j -> Just $ One j
-  OverlappedBy _ _ k -> Just $ One k
-  MetBy _ _ k -> Just $ One k
-  After _ j -> Just $ One j
+  Contains i _ k -> Just (Two i k)
+  StartedBy _ j -> Just (One j)
+  OverlappedBy _ _ k -> Just (One k)
+  MetBy _ _ k -> Just (One k)
+  After _ j -> Just (One j)
 
 -- | Infix synonym for 'difference'
 (\\) ::
@@ -1163,8 +1185,8 @@ measuring f = \case
 -- @
 hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
-  Before (_ :---: a) (b :---: _) -> levMaybe $ liftA2 (-) b a
-  After (_ :---: a) (b :---: _) -> levMaybe $ liftA2 (-) b a
+  Before (_ :---: a) (b :---: _) -> levMaybe (liftA2 (-) b a)
+  After (_ :---: a) (b :---: _) -> levMaybe (liftA2 (-) b a)
   _ -> Just 0
  where
   levMaybe = foldLevitated Nothing Just Nothing
