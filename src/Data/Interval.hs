@@ -15,11 +15,11 @@ module Data.Interval (
   -- |
   -- These pattern synonyms perform /normalization/: for @b > a@,
   -- the interval @b :?!: a@ becomes @a :!?: b@. Matching on @a :??: b@ guarantees @a <= b@.
-  pattern (:<>:),
-  pattern (:<|:),
-  pattern (:|>:),
-  pattern (:||:),
-  pattern (:--:),
+  data (:<>:),
+  data (:<|:),
+  data (:|>:),
+  data (:||:),
+  data (:--:),
 
   -- *** Possibly-infinite intervals
 
@@ -29,14 +29,14 @@ module Data.Interval (
   --
   -- The first four form a @{-# COMPLETE #-}@ set of bidirectional patterns,
   -- and the final is a @{-# COMPLETE #-}@ unidirectional pattern on its own.
-  pattern (:<->:),
-  pattern (:<-|:),
-  pattern (:|->:),
-  pattern (:|-|:),
-  pattern (:---:),
+  data (:<->:),
+  data (:<-|:),
+  data (:|->:),
+  data (:|-|:),
+  data (:---:),
 
   -- *** Miscellaneous constructors
-  pattern Whole,
+  data Whole,
   (+/-),
   (...),
   interval,
