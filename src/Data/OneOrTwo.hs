@@ -5,6 +5,7 @@ module Data.OneOrTwo (
 
 import Data.Data (Data)
 import GHC.Generics (Generic)
+import Prelude
 
 -- | Either one of something, or two of it.
 --

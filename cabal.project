@@ -1,0 +1,6 @@
+packages:
+  .
+  ../flex
+allow-newer:
+  time-compat:time
+tests: true

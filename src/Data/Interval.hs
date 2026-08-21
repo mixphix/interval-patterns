@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- |
 -- Module       : Data.Interval
 -- Copyright    : (c) Melanie Brown 2023
@@ -105,21 +107,40 @@ module Data.Interval (
   OneOrTwo (..),
 ) where
 
-import Algebra.Lattice.Levitated (Levitated (..), foldLevitated)
-import Control.Applicative (liftA2)
+import Control.Applicative qualified as Control
 import Control.DeepSeq
-import Control.Monad (join)
+import Data.Bifunctor (second)
+import Data.Bool
+import Data.Bounded (Bounded)
 import Data.Data
-import Data.Function (on)
+import Data.Enum (Enum)
+import Data.Eq (Eq (..))
+import Data.Foldable qualified as Data
+import Data.Function (flip, on)
+import Data.Functor qualified as Data
 import Data.Functor.Const (Const (Const))
 import Data.Hashable (Hashable (..))
+import Data.Int (Int)
 import Data.Kind (Constraint, Type)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe
+import Data.Monoid
 import Data.OneOrTwo (OneOrTwo (..))
-import Data.Ord (comparing)
+import Data.Ord (Ord (..), Ordering (..), comparing)
+import Data.Semigroup (Semigroup)
+import Data.String (String)
+import Data.Traversable qualified as Data
+import Data.Tuple
+import Data.Type.Equality (type (~))
+import GHC.Err (error)
+import GHC.Exts (seq)
 import GHC.Generics (Generic (..), type (:*:) (..))
-import Data.Bifunctor (second)
+import Text.Read (Read)
+import Text.Show (Show (show))
+
+import Flex.Math
+import Flex.Math.Category hiding (itraverse)
 
 -- | The kinds of extremum an interval can have.
 data Extremum
@@ -158,40 +179,65 @@ unBound = \case
   Sup x -> x
   Max x -> x
 
-instance Functor (Bound ext) where
+instance Data.Functor (Bound ext) where
   fmap :: (a -> b) -> Bound ext a -> Bound ext b
   fmap f = \case
     Min x -> Min (f x)
     Inf x -> Inf (f x)
     Sup x -> Sup (f x)
     Max x -> Max (f x)
-
-instance Foldable (Bound ext) where
+instance Data.Foldable (Bound ext) where
   foldMap :: (Monoid m) => (a -> m) -> Bound ext a -> m
   foldMap f = \case
     Min x -> f x
     Inf x -> f x
     Sup x -> f x
     Max x -> f x
-
-instance Traversable (Bound ext) where
-  traverse :: (Applicative f) => (a -> f b) -> Bound ext a -> f (Bound ext b)
+instance Data.Traversable (Bound ext) where
+  traverse :: (Control.Applicative f) => (a -> f b) -> Bound ext a -> f (Bound ext b)
   traverse f = \case
-    Min x -> Min <$> f x
-    Inf x -> Inf <$> f x
-    Sup x -> Sup <$> f x
-    Max x -> Max <$> f x
+    Min x -> Min Data.<$> f x
+    Inf x -> Inf Data.<$> f x
+    Sup x -> Sup Data.<$> f x
+    Max x -> Max Data.<$> f x
+
+instance Morphisms (->) (->) (Bound ext) where
+  morphism :: (x -> y) -> Bound ext x -> Bound ext y
+  morphism = Data.fmap
+instance Folds (->) (->) (Bound ext) where
+  foldWith :: (Monoid z) => (x -> z) -> Bound ext x -> z
+  foldWith = Data.foldMap
+instance Folds1 (->) (->) (Bound ext) where
+  foldWith1 :: (Semigroup z) => (x -> z) -> Bound ext x -> z
+  foldWith1 x_z = \case
+    Min x -> x_z x
+    Inf x -> x_z x
+    Sup x -> x_z x
+    Max x -> x_z x
+instance Traversals (->) (->) (Bound ext) where
+  traverse :: (Applicative g) => (x -> g y) -> Bound ext x -> g (Bound ext y)
+  traverse x_gy = \case
+    Min x -> morphism Min (x_gy x)
+    Inf x -> morphism Inf (x_gy x)
+    Sup x -> morphism Sup (x_gy x)
+    Max x -> morphism Max (x_gy x)
+instance Traversals1 (->) (->) (Bound ext) where
+  traverse1 :: (Apply g) => (x -> g y) -> Bound ext x -> g (Bound ext y)
+  traverse1 x_gy = \case
+    Min x -> morphism Min (x_gy x)
+    Inf x -> morphism Inf (x_gy x)
+    Sup x -> morphism Sup (x_gy x)
+    Max x -> morphism Max (x_gy x)
 
 instance (Eq x) => Eq (Bound ext x) where
-  (==) :: (Eq x) => Bound ext x -> Bound ext x -> Bool
+  (==) :: Bound ext x -> Bound ext x -> Bool
   Min x == Min y = x == y
   Inf x == Inf y = x == y
   Sup x == Sup y = x == y
   Max x == Max y = x == y
 
-instance (Ord x) => Ord (Bound ext (Levitated x)) where
-  compare ::
-    (Ord x) => Bound ext (Levitated x) -> Bound ext (Levitated x) -> Ordering
+instance (Ord x) => Ord (Bound ext (Suspension x)) where
+  compare :: Bound ext (Suspension x) -> Bound ext (Suspension x) -> Ordering
   compare = compareBounds
 
 -- | A type class for inverting 'Bound's.
@@ -232,15 +278,15 @@ instance Bounding Maximum where
 
 -- | 'Bound's have special comparison rules for identical points.
 --
--- >>> compareBounds (Min (Levitate 0)) (Max (Levitate 0))
+-- >>> compareBounds (Min (Meridian 0)) (Max (Meridian 0))
 -- EQ
--- >>> compareBounds (Inf (Levitate 0)) (Sup (Levitate 0))
+-- >>> compareBounds (Inf (Meridian 0)) (Sup (Meridian 0))
 -- GT
--- >>> compareBounds (Max (Levitate 0)) (Sup (Levitate 0))
+-- >>> compareBounds (Max (Meridian 0)) (Sup (Meridian 0))
 -- GT
--- >>> compareBounds (Inf (Levitate 0)) (Min (Levitate 0))
+-- >>> compareBounds (Inf (Meridian 0)) (Min (Meridian 0))
 -- GT
--- >>> compareBounds (Max (Levitate 0)) (Inf (Levitate 0))
+-- >>> compareBounds (Max (Meridian 0)) (Inf (Meridian 0))
 -- LT
 compareBounds ::
   (Ord x) =>
@@ -273,17 +319,16 @@ data SomeBound x
     (Bounding ext, Bounding (Opposite ext)) =>
     SomeBound !(Bound ext x)
 
-instance (Eq x) => Eq (SomeBound (Levitated x)) where
-  (==) :: (Eq x) => SomeBound (Levitated x) -> SomeBound (Levitated x) -> Bool
+instance (Eq x) => Eq (SomeBound (Suspension x)) where
+  (==) :: SomeBound (Suspension x) -> SomeBound (Suspension x) -> Bool
   SomeBound (Min a) == SomeBound (Min b) = a == b
   SomeBound (Max a) == SomeBound (Max b) = a == b
   SomeBound (Inf a) == SomeBound (Inf b) = a == b
   SomeBound (Sup a) == SomeBound (Sup b) = a == b
   _ == _ = False
 
-instance (Ord x) => Ord (SomeBound (Levitated x)) where
-  compare ::
-    (Ord x) => SomeBound (Levitated x) -> SomeBound (Levitated x) -> Ordering
+instance (Ord x) => Ord (SomeBound (Suspension x)) where
+  compare :: SomeBound (Suspension x) -> SomeBound (Suspension x) -> Ordering
   SomeBound b0 `compare` SomeBound b1 = compareBounds b0 b1
 
 oppose :: SomeBound x -> SomeBound x
@@ -305,26 +350,26 @@ data Interval x where
   -- | Open-open interval. You probably want '(:<->:)' or '(:<>:)'.
   (:<-->:) ::
     (Ord x) =>
-    !(Bound Infimum (Levitated x)) ->
-    !(Bound Supremum (Levitated x)) ->
+    !(Bound Infimum (Suspension x)) ->
+    !(Bound Supremum (Suspension x)) ->
     Interval x
   -- | Open-closed interval. You probably want '(:<-|:)' or '(:<|:)'.
   (:<--|:) ::
     (Ord x) =>
-    !(Bound Infimum (Levitated x)) ->
-    !(Bound Maximum (Levitated x)) ->
+    !(Bound Infimum (Suspension x)) ->
+    !(Bound Maximum (Suspension x)) ->
     Interval x
   -- | Closed-open interval. You probably want '(:|->:)' or '(:|>:)'.
   (:|-->:) ::
     (Ord x) =>
-    !(Bound Minimum (Levitated x)) ->
-    !(Bound Supremum (Levitated x)) ->
+    !(Bound Minimum (Suspension x)) ->
+    !(Bound Supremum (Suspension x)) ->
     Interval x
   -- | Closed-closed interval. You probably want '(:|-|:)' or '(:||:)'.
   (:|--|:) ::
     (Ord x) =>
-    !(Bound Minimum (Levitated x)) ->
-    !(Bound Maximum (Levitated x)) ->
+    !(Bound Minimum (Suspension x)) ->
+    !(Bound Maximum (Suspension x)) ->
     Interval x
 
 infix 5 :<->:
@@ -338,7 +383,7 @@ infix 5 :|-|:
 -- | A bidirectional pattern synonym matching open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern (:<->:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :<->: u <-
   Inf l :<-->: Sup u
   where
@@ -352,7 +397,7 @@ pattern l :<->: u <-
 -- | A bidirectional pattern synonym matching open-closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern (:<-|:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :<-|: u <-
   Inf l :<--|: Max u
   where
@@ -367,7 +412,7 @@ pattern l :<-|: u <-
 -- | A bidirectional pattern synonym matching closed-open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:|->:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern (:|->:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :|->: u <-
   Min l :|-->: Sup u
   where
@@ -382,7 +427,7 @@ pattern l :|->: u <-
 -- | A bidirectional pattern synonym matching closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:|-|:) :: (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern (:|-|:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :|-|: u <-
   Min l :|--|: Max u
   where
@@ -391,7 +436,7 @@ pattern l :|-|: u <-
 {-# COMPLETE (:<->:), (:<-|:), (:|->:), (:|-|:) #-}
 
 -- | A unidirectional pattern synonym ignoring the particular 'Bound's.
-pattern (:---:) :: forall x. (Ord x) => Levitated x -> Levitated x -> Interval x
+pattern (:---:) :: forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :---: u <-
   (bounds -> (SomeBound (unBound -> l), SomeBound (unBound -> u)))
 
@@ -410,11 +455,11 @@ infix 5 :||:
 -- This pattern synonym performs normalization.
 pattern (:<>:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :<>: u <-
-  Levitate l :<->: Levitate u
+  Meridian l :<->: Meridian u
   where
     b1 :<>: b2 =
-      let inf = Levitate (min b1 b2)
-          sup = Levitate (max b1 b2)
+      let inf = Meridian (min b1 b2)
+          sup = Meridian (max b1 b2)
        in case compare b1 b2 of
             EQ -> Min inf :|--|: Max sup
             _ -> Inf inf :<-->: Sup sup
@@ -424,11 +469,11 @@ pattern l :<>: u <-
 -- This pattern synonym performs normalization.
 pattern (:<|:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :<|: u <-
-  Levitate l :<-|: Levitate u
+  Meridian l :<-|: Meridian u
   where
     b1 :<|: b2 =
-      let inf = Levitate (min b1 b2)
-          sup = Levitate (max b1 b2)
+      let inf = Meridian (min b1 b2)
+          sup = Meridian (max b1 b2)
        in case compare b1 b2 of
             LT -> Inf inf :<--|: Max sup
             EQ -> Min inf :|--|: Max sup
@@ -439,11 +484,11 @@ pattern l :<|: u <-
 -- This pattern synonym performs normalization.
 pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :|>: u <-
-  Levitate l :|->: Levitate u
+  Meridian l :|->: Meridian u
   where
     b1 :|>: b2 =
-      let inf = Levitate (min b1 b2)
-          sup = Levitate (max b1 b2)
+      let inf = Meridian (min b1 b2)
+          sup = Meridian (max b1 b2)
        in case compare b1 b2 of
             LT -> Min inf :|-->: Sup sup
             EQ -> Min inf :|--|: Max sup
@@ -454,9 +499,9 @@ pattern l :|>: u <-
 -- This pattern synonym performs normalization.
 pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :||: u <-
-  Levitate l :|-|: Levitate u
+  Meridian l :|-|: Meridian u
   where
-    b1 :||: b2 = Min (Levitate (min b1 b2)) :|--|: Max (Levitate (max b1 b2))
+    b1 :||: b2 = Min (Meridian (min b1 b2)) :|--|: Max (Meridian (max b1 b2))
 
 -- |
 -- A unidirectional pattern synonym matching finite intervals,
@@ -464,17 +509,17 @@ pattern l :||: u <-
 pattern (:--:) :: forall x. (Ord x) => x -> x -> Interval x
 pattern l :--: u <-
   ( bounds ->
-      (SomeBound (unBound -> Levitate l), SomeBound (unBound -> Levitate u))
+      (SomeBound (unBound -> Meridian l), SomeBound (unBound -> Meridian u))
     )
 
--- | The whole interval, 'Bottom' ':|-|:' 'Top'.
+-- | The whole interval, 'South' ':|-|:' 'North'.
 pattern Whole :: (Ord x) => Interval x
-pattern Whole = Bottom :|-|: Top
+pattern Whole = South :|-|: North
 
 deriving instance (Ord x) => Eq (Interval x)
 
 instance (Ord x, Show x) => Show (Interval x) where
-  show :: (Ord x, Show x) => Interval x -> String
+  show :: Interval x -> String
   show = \case
     l :<>: u -> "(" <> show l <> " :<>: " <> show u <> ")"
     l :|>: u -> "(" <> show l <> " :|>: " <> show u <> ")"
@@ -486,12 +531,11 @@ instance (Ord x, Show x) => Show (Interval x) where
     l :|-|: u -> "(" <> show l <> " :|-|: " <> show u <> ")"
 
 instance (Ord x) => Ord (Interval x) where
-  compare :: (Ord x) => Interval x -> Interval x -> Ordering
+  compare :: Interval x -> Interval x -> Ordering
   compare i1 i2 = on compare lower i1 i2 <> on compare upper i1 i2
 
 instance (Ord x, Data x) => Data (Interval x) where
   gfoldl ::
-    (Ord x, Data x) =>
     (forall d b. (Data d) => c (d -> b) -> d -> c b) ->
     (forall g. g -> c g) ->
     Interval x ->
@@ -502,18 +546,17 @@ instance (Ord x, Data x) => Data (Interval x) where
     l :<-|: u -> gpure (:<-|:) <^> l <^> u
     l :|-|: u -> gpure (:|-|:) <^> l <^> u
 
-  toConstr :: (Ord x, Data x) => Interval x -> Constr
+  toConstr :: Interval x -> Constr
   toConstr = \case
     _ :<->: _ -> intervalOpenOpenConstr
     _ :|->: _ -> intervalClosedOpenConstr
     _ :<-|: _ -> intervalOpenClosedConstr
     _ :|-|: _ -> intervalClosedClosedConstr
 
-  dataTypeOf :: (Ord x, Data x) => Interval x -> DataType
+  dataTypeOf :: Interval x -> DataType
   dataTypeOf _ = intervalDataType
 
   gunfold ::
-    (Ord x, Data x) =>
     (forall b r. (Data b) => c (b -> r) -> c r) ->
     (forall r. r -> c r) ->
     Constr ->
@@ -570,20 +613,27 @@ intervalDataType =
 instance (Ord x, Generic x) => Generic (Interval x) where
   type
     Rep (Interval x) =
-      (Const (Levitated x, Extremum) :*: Const (Levitated x, Extremum))
+      (Const (Suspension x, Extremum) :*: Const (Suspension x, Extremum))
 
-  from :: (Ord x, Generic x) => Interval x -> Rep (Interval x) x1
+  from :: Interval x -> Rep (Interval x) x1
   from = \case
     l :<->: u -> Const (l, Infimum) :*: Const (u, Supremum)
     l :|->: u -> Const (l, Minimum) :*: Const (u, Supremum)
     l :<-|: u -> Const (l, Infimum) :*: Const (u, Maximum)
     l :|-|: u -> Const (l, Minimum) :*: Const (u, Maximum)
 
-  to :: (Ord x, Generic x) => Rep (Interval x) x1 -> Interval x
+  to :: Rep (Interval x) x1 -> Interval x
   to (Const l :*: Const u) = l ... u
 
+instance (Hashable x) => Hashable (Suspension x) where
+  hashWithSalt :: Int -> Suspension x -> Int
+  hashWithSalt s = \case
+    South -> s `hashWithSalt` (1 :: Int)
+    Meridian x -> s `hashWithSalt` (2 :: Int) `hashWithSalt` x
+    North -> s `hashWithSalt` (3 :: Int)
+
 instance (Ord x, Hashable x) => Hashable (Interval x) where
-  hashWithSalt :: (Ord x, Hashable x) => Int -> Interval x -> Int
+  hashWithSalt :: Int -> Interval x -> Int
   hashWithSalt s = \case
     l :<->: u -> s `hashWithSalt` (1 :: Int) `hashWithSalt` l `hashWithSalt` u
     l :|->: u -> s `hashWithSalt` (2 :: Int) `hashWithSalt` l `hashWithSalt` u
@@ -591,22 +641,22 @@ instance (Ord x, Hashable x) => Hashable (Interval x) where
     l :|-|: u -> s `hashWithSalt` (4 :: Int) `hashWithSalt` l `hashWithSalt` u
 
 instance (Ord x, NFData x) => NFData (Interval x) where
-  rnf :: (Ord x, NFData x) => Interval x -> ()
+  rnf :: Interval x -> ()
   rnf (x :---: y) = x `seq` y `seq` ()
 
 -- | Since the 'Ord' constraints on the constructors for 'Interval'
 -- prevent it from being a 'Functor', this will have to suffice.
-imap :: (Ord x, Ord y) => (x -> y) -> Interval x -> Interval y
-imap f = \case
-  l :<->: u -> fmap f l :<->: fmap f u
-  l :|->: u -> fmap f l :|->: fmap f u
-  l :<-|: u -> fmap f l :<-|: fmap f u
-  l :|-|: u -> fmap f l :|-|: fmap f u
+imap :: (x ~> y) -> Interval x -> Interval y
+imap (OrdArrow f) = \case
+  l :<->: u -> morphism f l :<->: morphism f u
+  l :|->: u -> morphism f l :|->: morphism f u
+  l :<-|: u -> morphism f l :<-|: morphism f u
+  l :|-|: u -> morphism f l :|-|: morphism f u
 
--- | Same as 'imap' but on the 'Levitated' of the underlying type.
+-- | Same as 'imap' but on the 'Suspension' of the underlying type.
 imapLev ::
   (Ord x, Ord y) =>
-  (Levitated x -> Levitated y) ->
+  (Suspension x -> Suspension y) ->
   Interval x ->
   Interval y
 imapLev f = \case
@@ -628,10 +678,10 @@ itraverse f = \case
   l :<-|: u -> liftA2 (:<-|:) (traverse f l) (traverse f u)
   l :|-|: u -> liftA2 (:|-|:) (traverse f l) (traverse f u)
 
--- | Same as 'itraverse' but on the 'Levitated' of the underlying type.
+-- | Same as 'itraverse' but on the 'Suspension' of the underlying type.
 itraverseLev ::
   (Ord x, Ord y, Applicative f) =>
-  (Levitated x -> f (Levitated y)) ->
+  (Suspension x -> f (Suspension y)) ->
   Interval x ->
   f (Interval y)
 itraverseLev f = \case
@@ -641,7 +691,7 @@ itraverseLev f = \case
   l :|-|: u -> liftA2 (:|-|:) (f l) (f u)
 
 -- | Get the @('lower', 'upper')@ bounds of an 'Interval'.
-bounds :: Interval x -> (SomeBound (Levitated x), SomeBound (Levitated x))
+bounds :: Interval x -> (SomeBound (Suspension x), SomeBound (Suspension x))
 bounds = \case
   l :<-->: u -> (SomeBound l, SomeBound u)
   l :<--|: u -> (SomeBound l, SomeBound u)
@@ -651,18 +701,18 @@ bounds = \case
 -- | Get the lower bound of an interval.
 --
 -- > lower = fst . bounds
-lower :: (Ord x) => Interval x -> SomeBound (Levitated x)
+lower :: (Ord x) => Interval x -> SomeBound (Suspension x)
 lower = fst . bounds
 
 -- | Get the upper bound of an interval.
 --
 -- > upper = snd . bounds
-upper :: (Ord x) => Interval x -> SomeBound (Levitated x)
+upper :: (Ord x) => Interval x -> SomeBound (Suspension x)
 upper = snd . bounds
 
 -- | Get the lower bound of an interval
 -- (with the bound expressed at the term level).
-lowerBound :: (Ord x) => Interval x -> (Levitated x, Extremum)
+lowerBound :: (Ord x) => Interval x -> (Suspension x, Extremum)
 lowerBound = \case
   l :<->: _ -> (l, Infimum)
   l :<-|: _ -> (l, Infimum)
@@ -671,7 +721,7 @@ lowerBound = \case
 
 -- | Get the upper bound of an interval
 -- (with the bound expressed at the term level).
-upperBound :: (Ord x) => Interval x -> (Levitated x, Extremum)
+upperBound :: (Ord x) => Interval x -> (Suspension x, Extremum)
 upperBound = \case
   _ :<->: u -> (u, Supremum)
   _ :<-|: u -> (u, Maximum)
@@ -681,8 +731,8 @@ upperBound = \case
 -- | Given 'SomeBound's, try to make an interval.
 interval ::
   (Ord x) =>
-  SomeBound (Levitated x) ->
-  SomeBound (Levitated x) ->
+  SomeBound (Suspension x) ->
+  SomeBound (Suspension x) ->
   Interval x
 interval (SomeBound b1) (SomeBound b2) = case (b1, b2) of
   (Min l, Sup u) -> l :|->: u
@@ -698,8 +748,8 @@ interval (SomeBound b1) (SomeBound b2) = case (b1, b2) of
 -- | Given limits and 'Extremum's, try to make an interval.
 (...) ::
   (Ord x) =>
-  (Levitated x, Extremum) ->
-  (Levitated x, Extremum) ->
+  (Suspension x, Extremum) ->
+  (Suspension x, Extremum) ->
   Interval x
 (x, b1) ... (y, b2) = case (b1, b2) of
   (Minimum, Supremum) -> l :|->: u
@@ -830,8 +880,8 @@ adjacency i1 i2 = case (comparing lower i1 i2, comparing upper i1 i2) of
 -- >>> hull (7 :|>: 8) (3 :|>: 4)
 -- (3 :|>: 8)
 --
--- >>> hull (Bottom :<-|: Levitate 3) (4 :<>: 5)
--- (Bottom :<->: Levitate 5)
+-- >>> hull (South :<-|: Meridian 3) (4 :<>: 5)
+-- (South :<->: Meridian 5)
 hull :: (Ord x) => Interval x -> Interval x -> Interval x
 hull i1 i2 = case adjacency i1 i2 of
   Before i j -> interval (lower i) (upper j)
@@ -854,7 +904,7 @@ hulls (i :| []) = i
 hulls (i :| j : is) = hulls (hull i j :| is)
 
 -- | Test whether a point is contained in the interval.
-within :: (Ord x) => Levitated x -> Interval x -> Bool
+within :: (Ord x) => Suspension x -> Interval x -> Bool
 within x = \case
   l :<->: u -> l < x && x < u
   l :<-|: u -> l < x && x <= u
@@ -866,25 +916,25 @@ point :: (Ord x) => x -> Interval x
 point = join (:||:)
 
 -- | Get the infimum of an interval, weakening if necessary.
-iinf :: (Ord x) => Interval x -> Levitated x
+iinf :: (Ord x) => Interval x -> Suspension x
 iinf (x :---: _) = x
 
 -- | Get the minimum of an interval, if it exists.
-imin :: (Ord x) => Interval x -> Maybe (Levitated x)
+imin :: (Ord x) => Interval x -> Maybe (Suspension x)
 imin = \case
   (x :|->: _) -> Just x
   (x :|-|: _) -> Just x
   _ -> Nothing
 
 -- | Get the maximum of an interval, if it exists.
-imax :: (Ord x) => Interval x -> Maybe (Levitated x)
+imax :: (Ord x) => Interval x -> Maybe (Suspension x)
 imax = \case
   (_ :<-|: x) -> Just x
   (_ :|-|: x) -> Just x
   _ -> Nothing
 
 -- | Get the supremum of an interval, weakening if necessary.
-isup :: (Ord x) => Interval x -> Levitated x
+isup :: (Ord x) => Interval x -> Suspension x
 isup (_ :---: x) = x
 
 -- | Open both bounds of the given interval.
@@ -935,14 +985,14 @@ closedUpper = \case
   l :|->: u -> l :|-|: u
   l :|-|: u -> l :|-|: u
 
-setLower :: (Ord x) => Levitated x -> Interval x -> Interval x
+setLower :: (Ord x) => Suspension x -> Interval x -> Interval x
 setLower x = \case
   _ :<->: u -> x :<->: u
   _ :<-|: u -> x :<-|: u
   _ :|->: u -> x :|->: u
   _ :|-|: u -> x :|-|: u
 
-setUpper :: (Ord x) => Levitated x -> Interval x -> Interval x
+setUpper :: (Ord x) => Suspension x -> Interval x -> Interval x
 setUpper x = \case
   l :<->: _ -> l :<->: x
   l :<-|: _ -> l :<-|: x
@@ -1040,14 +1090,14 @@ unionsAsc = \case
 --
 -- @
 -- >>> complement (3 :<>: 4)
--- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
+-- Just (Two (South :|-|: Meridian 3) (Meridian 4 :|-|: North))
 -- @
 --
 -- Note that infinitely-open intervals will include in their result
 -- the points at infinity toward which they are infinite:
 -- @
--- >>> complement (Levitate 3 :<->: Top)
--- Just (Two (Bottom :|-|: Levitate 3) (Top :|-|: Top))
+-- >>> complement (Meridian 3 :<->: North)
+-- Just (Two (South :|-|: Meridian 3) (North :|-|: North))
 -- @
 complement ::
   forall x.
@@ -1056,20 +1106,20 @@ complement ::
   Maybe (OneOrTwo (Interval x))
 complement = \case
   Whole -> Nothing
-  Bottom :|-|: u -> Just (One (u :<-|: Top))
-  Bottom :|->: u -> Just (One (u :|-|: Top))
-  Bottom :<-|: u -> Just (Two (Bottom :|-|: Bottom) (u :<-|: Top))
-  Bottom :<->: u -> Just (Two (Bottom :|-|: Bottom) (u :|-|: Top))
+  South :|-|: u -> Just (One (u :<-|: North))
+  South :|->: u -> Just (One (u :|-|: North))
+  South :<-|: u -> Just (Two (South :|-|: South) (u :<-|: North))
+  South :<->: u -> Just (Two (South :|-|: South) (u :|-|: North))
   --
-  l :|-|: Top -> Just (One (Bottom :|->: l))
-  l :<-|: Top -> Just (One (Bottom :|-|: l))
-  l :|->: Top -> Just (Two (Bottom :|->: l) (Top :|-|: Top))
-  l :<->: Top -> Just (Two (Bottom :|-|: l) (Top :|-|: Top))
+  l :|-|: North -> Just (One (South :|->: l))
+  l :<-|: North -> Just (One (South :|-|: l))
+  l :|->: North -> Just (Two (South :|->: l) (North :|-|: North))
+  l :<->: North -> Just (Two (South :|-|: l) (North :|-|: North))
   --
-  l :|-|: u -> Just (Two (Bottom :|->: l) (u :<-|: Top))
-  l :|->: u -> Just (Two (Bottom :|->: l) (u :|-|: Top))
-  l :<-|: u -> Just (Two (Bottom :|-|: l) (u :<-|: Top))
-  l :<->: u -> Just (Two (Bottom :|-|: l) (u :|-|: Top))
+  l :|-|: u -> Just (Two (South :|->: l) (u :<-|: North))
+  l :|->: u -> Just (Two (South :|->: l) (u :|-|: North))
+  l :<-|: u -> Just (Two (South :|-|: l) (u :<-|: North))
+  l :<->: u -> Just (Two (South :|-|: l) (u :|-|: North))
 
 infix 4 `difference`
 
@@ -1077,7 +1127,7 @@ infix 4 `difference`
 --
 -- @
 -- >>> difference Whole (3 :<>: 4)
--- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
+-- Just (Two (South :|-|: Meridian 3) (Meridian 4 :|-|: North))
 --
 -- >>> difference (1 :<>: 4) (2 :||: 5)
 -- Just (One (1 :<>: 2))
@@ -1123,7 +1173,7 @@ difference i1 i2 = case adjacency i1 i2 of
 --
 -- @
 -- >>> symmetricDifference Whole (3 :<>: 4)
--- Just (Two (Bottom :|-|: Levitate 3) (Levitate 4 :|-|: Top))
+-- Just (Two (South :|-|: Meridian 3) (Meridian 4 :|-|: North))
 --
 -- >>> symmetricDifference (1 :<>: 4) (2 :||: 5)
 -- Just (Two (1 :<>: 2) (4 :||: 5))
@@ -1146,11 +1196,11 @@ symmetricDifference i1 i2 = case i1 `union` i2 of
 -- >>> measure (-1 :<>: 1)
 -- Just 2
 --
--- >>> measure (Bottom :<->: Levitate 1)
+-- >>> measure (South :<->: Meridian 1)
 -- Nothing
 -- @
-measure :: forall x. (Ord x, Num x) => Interval x -> Maybe x
-measure = measuring subtract
+measure :: forall x. (Ord x, Additive x, Subtraction x x x) => Interval x -> Maybe x
+measure = measuring (flip (-))
 
 -- | Apply a function to the lower, then upper, endpoint of an interval.
 --
@@ -1164,14 +1214,14 @@ measure = measuring subtract
 -- > measure == measuring subtract
 measuring ::
   forall y x.
-  (Ord x, Num y) =>
+  (Ord x, Additive y) =>
   (x -> x -> y) ->
   Interval x ->
   Maybe y
 measuring f = \case
-  Levitate l :---: Levitate u -> Just (f l u)
+  Meridian l :---: Meridian u -> Just (f l u)
   l :---: u
-    | l == u -> Just 0
+    | l == u -> Just zero
     | otherwise -> Nothing
 
 -- | Get the distance between two intervals.
@@ -1183,18 +1233,18 @@ measuring f = \case
 -- >>> hausdorff (3 :<>: 5) Whole
 -- Just 0
 -- @
-hausdorff :: (Ord x, Num x) => Interval x -> Interval x -> Maybe x
+hausdorff :: (Ord x, Additive x, Subtraction x x x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
-  Before (_ :---: a) (b :---: _) -> levMaybe (liftA2 (-) b a)
-  After (_ :---: a) (b :---: _) -> levMaybe (liftA2 (-) b a)
-  _ -> Just 0
+  Before (_ :---: a) (b :---: _) -> suspensionMaybe (liftA2 (-) b a)
+  After (_ :---: a) (b :---: _) -> suspensionMaybe (liftA2 (-) b a)
+  _ -> Just zero
  where
-  levMaybe = foldLevitated Nothing Just Nothing
+  suspensionMaybe = suspension Nothing Just Nothing
 
 -- | @m '+/-' r@ creates the closed interval centred at @m@ with radius @r@.
 --
 -- For the open interval, simply write @'open' (x '+/-' y)@.
-(+/-) :: (Ord x, Num x) => x -> x -> Interval x
+(+/-) :: (Ord x, Addition x x x, Subtraction x x x) => x -> x -> Interval x
 m +/- r = m - r :||: m + r
 
 -- | Full containment.
@@ -1214,8 +1264,8 @@ isSubsetOf i j = case adjacency i j of
   MetBy{} -> False
   After{} -> False
 
-clamp :: (Ord x) => x -> Interval x -> Levitated x
+clamp :: (Ord x) => x -> Interval x -> Suspension x
 clamp x (l :---: u)
-  | Levitate x < l = l
-  | Levitate x > u = u
-  | otherwise = Levitate x
+  | Meridian x < l = l
+  | Meridian x > u = u
+  | otherwise = Meridian x
