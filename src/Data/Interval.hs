@@ -120,7 +120,6 @@ import Data.Function (flip, on)
 import Data.Functor qualified as Data
 import Data.Functor.Const (Const (Const))
 import Data.Hashable (Hashable (..))
-import Data.Int (Int)
 import Data.Kind (Constraint, Type)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -128,7 +127,6 @@ import Data.Maybe
 import Data.Monoid
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Ord (Ord (..), Ordering (..), comparing)
-import Data.Semigroup (Semigroup)
 import Data.String (String)
 import Data.Traversable qualified as Data
 import Data.Tuple

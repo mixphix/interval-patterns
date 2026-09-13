@@ -4,14 +4,12 @@
 module Main where
 
 import Flex.Math
-import Flex.Math.Category
 
 import Control.Applicative qualified as Control
 import Control.Monad qualified as Control
 import Data.Bool
 import Data.Eq (Eq (..))
 import Data.Functor qualified as Data
-import Data.Int (Int)
 import Data.Interval (
   Interval,
   data (:<->:),

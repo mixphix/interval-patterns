@@ -25,9 +25,7 @@ import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe
-import Data.Monoid (Monoid (..))
 import Data.Ord
-import Data.Semigroup (Semigroup ((<>)))
 import Data.Time
 import Data.Timeframe
 import Data.Tuple
