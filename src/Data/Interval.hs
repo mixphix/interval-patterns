@@ -6,106 +6,106 @@
 -- License      : BSD3 (see the file LICENSE)
 --
 -- Intervals over types and their operations.
-module Data.Interval (
-  -- * The Interval type
-  Interval,
+module Data.Interval
+  ( -- * The Interval type
+    Interval
 
-  -- ** Construction
+    -- ** Construction
 
-  -- *** Finite intervals
+    -- *** Finite intervals
 
-  -- |
-  -- These pattern synonyms perform /normalization/: for @b > a@,
-  -- the interval @b :?!: a@ becomes @a :!?: b@. Matching on @a :??: b@ guarantees @a <= b@.
-  data (:<>:),
-  data (:<|:),
-  data (:|>:),
-  data (:||:),
-  data (:--:),
+    -- |
+    -- These pattern synonyms perform /normalization/: for @b > a@,
+    -- the interval @b :?!: a@ becomes @a :!?: b@. Matching on @a :??: b@ guarantees @a <= b@.
+  , data (:<>:)
+  , data (:<|:)
+  , data (:|>:)
+  , data (:||:)
+  , data (:--:)
 
-  -- *** Possibly-infinite intervals
+    -- *** Possibly-infinite intervals
 
-  -- |
-  -- These pattern synonyms perform /normalization/: for @b > a@,
-  -- the interval @b :?-!: a@ becomes @a :!-?: b@. Matching on @a :??: b@ guarantees @a <= b@.
-  --
-  -- The first four form a @{-# COMPLETE #-}@ set of bidirectional patterns,
-  -- and the final is a @{-# COMPLETE #-}@ unidirectional pattern on its own.
-  data (:<->:),
-  data (:<-|:),
-  data (:|->:),
-  data (:|-|:),
-  data (:---:),
+    -- |
+    -- These pattern synonyms perform /normalization/: for @b > a@,
+    -- the interval @b :?-!: a@ becomes @a :!-?: b@. Matching on @a :??: b@ guarantees @a <= b@.
+    --
+    -- The first four form a @{-# COMPLETE #-}@ set of bidirectional patterns,
+    -- and the final is a @{-# COMPLETE #-}@ unidirectional pattern on its own.
+  , data (:<->:)
+  , data (:<-|:)
+  , data (:|->:)
+  , data (:|-|:)
+  , data (:---:)
 
-  -- *** Miscellaneous constructors
-  data Whole,
-  (+/-),
-  (...),
-  interval,
-  point,
+    -- *** Miscellaneous constructors
+  , data Whole
+  , (+/-)
+  , (...)
+  , interval
+  , point
 
-  -- ** Deconstruction
-  bounds,
-  lower,
-  lowerBound,
-  upper,
-  upperBound,
-  imin,
-  iinf,
-  isup,
-  imax,
+    -- ** Deconstruction
+  , bounds
+  , lower
+  , lowerBound
+  , upper
+  , upperBound
+  , imin
+  , iinf
+  , isup
+  , imax
 
-  -- ** Modification
-  imap,
-  imapLev,
-  itraverse,
-  itraverseLev,
-  open,
-  close,
-  openclosed,
-  closedopen,
-  openLower,
-  closedLower,
-  openUpper,
-  closedUpper,
-  setLower,
-  setUpper,
+    -- ** Modification
+  , imap
+  , imapLev
+  , itraverse
+  , itraverseLev
+  , open
+  , close
+  , openclosed
+  , closedopen
+  , openLower
+  , closedLower
+  , openUpper
+  , closedUpper
+  , setLower
+  , setUpper
 
-  -- * Computing with intervals
-  Adjacency (..),
-  hull,
-  hulls,
-  within,
-  converseAdjacency,
-  adjacency,
-  intersect,
-  union,
-  unions,
-  unionsAsc,
-  complement,
-  difference,
-  (\\),
-  symmetricDifference,
-  measure,
-  measuring,
-  hausdorff,
-  isSubsetOf,
-  clamp,
+    -- * Computing with intervals
+  , Adjacency (..)
+  , hull
+  , hulls
+  , within
+  , converseAdjacency
+  , adjacency
+  , intersect
+  , union
+  , unions
+  , unionsAsc
+  , complement
+  , difference
+  , (\\)
+  , symmetricDifference
+  , measure
+  , measuring
+  , hausdorff
+  , isSubsetOf
+  , clamp
 
-  -- * Bounds
-  Extremum (..),
-  opposite,
-  Bound (..),
-  unBound,
-  Bounding (..),
-  compareBounds,
-  SomeBound (..),
-  unSomeBound,
-  oppose,
+    -- * Bounds
+  , Extremum (..)
+  , opposite
+  , Bound (..)
+  , unBound
+  , Bounding (..)
+  , compareBounds
+  , SomeBound (..)
+  , unSomeBound
+  , oppose
 
-  -- * Re-exports
-  OneOrTwo (..),
-) where
+    -- * Re-exports
+  , OneOrTwo (..)
+  ) where
 
 import Control.Applicative qualified as Control
 import Control.DeepSeq
@@ -120,15 +120,12 @@ import Data.Function (flip, on)
 import Data.Functor qualified as Data
 import Data.Functor.Const (Const (Const))
 import Data.Hashable (Hashable (..))
-import Data.Int (Int)
 import Data.Kind (Constraint, Type)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe
-import Data.Monoid
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Ord (Ord (..), Ordering (..), comparing)
-import Data.Semigroup (Semigroup)
 import Data.String (String)
 import Data.Traversable qualified as Data
 import Data.Tuple
@@ -194,7 +191,8 @@ instance Data.Foldable (Bound ext) where
     Sup x -> f x
     Max x -> f x
 instance Data.Traversable (Bound ext) where
-  traverse :: (Control.Applicative f) => (a -> f b) -> Bound ext a -> f (Bound ext b)
+  traverse ::
+    (Control.Applicative f) => (a -> f b) -> Bound ext a -> f (Bound ext b)
   traverse f = \case
     Min x -> Min Data.<$> f x
     Inf x -> Inf Data.<$> f x
@@ -245,6 +243,7 @@ type Bounding :: Extremum -> Constraint
 class (Opposite (Opposite ext) ~ ext) => Bounding ext where
   type Opposite ext :: Extremum
   bound :: x -> Bound ext x
+
   -- | c.f. 'opposite'.
   opposeBound :: Bound ext x -> Bound (Opposite ext) x
 
@@ -383,60 +382,61 @@ infix 5 :|-|:
 -- | A bidirectional pattern synonym matching open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<->:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
-pattern l :<->: u <-
-  Inf l :<-->: Sup u
-  where
-    b1 :<->: b2 =
-      let inf = min b1 b2
-          sup = max b1 b2
-       in case compare b1 b2 of
-            EQ -> Min inf :|--|: Max sup
-            _ -> Inf inf :<-->: Sup sup
+pattern (:<->:) ::
+  forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
+pattern l :<->: u <- Inf l :<-->: Sup u
+ where
+  b1 :<->: b2 =
+    let inf = min b1 b2
+        sup = max b1 b2
+     in case compare b1 b2 of
+          EQ -> Min inf :|--|: Max sup
+          _ -> Inf inf :<-->: Sup sup
 
 -- | A bidirectional pattern synonym matching open-closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<-|:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
-pattern l :<-|: u <-
-  Inf l :<--|: Max u
-  where
-    b1 :<-|: b2 =
-      let inf = min b1 b2
-          sup = max b1 b2
-       in case compare b1 b2 of
-            LT -> Inf inf :<--|: Max sup
-            EQ -> Min inf :|--|: Max sup
-            GT -> Min inf :|-->: Sup sup
+pattern (:<-|:) ::
+  forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
+pattern l :<-|: u <- Inf l :<--|: Max u
+ where
+  b1 :<-|: b2 =
+    let inf = min b1 b2
+        sup = max b1 b2
+     in case compare b1 b2 of
+          LT -> Inf inf :<--|: Max sup
+          EQ -> Min inf :|--|: Max sup
+          GT -> Min inf :|-->: Sup sup
 
 -- | A bidirectional pattern synonym matching closed-open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:|->:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
-pattern l :|->: u <-
-  Min l :|-->: Sup u
-  where
-    b1 :|->: b2 =
-      let inf = min b1 b2
-          sup = max b1 b2
-       in case compare b1 b2 of
-            LT -> Min inf :|-->: Sup sup
-            EQ -> Min inf :|--|: Max sup
-            GT -> Inf inf :<--|: Max sup
+pattern (:|->:) ::
+  forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
+pattern l :|->: u <- Min l :|-->: Sup u
+ where
+  b1 :|->: b2 =
+    let inf = min b1 b2
+        sup = max b1 b2
+     in case compare b1 b2 of
+          LT -> Min inf :|-->: Sup sup
+          EQ -> Min inf :|--|: Max sup
+          GT -> Inf inf :<--|: Max sup
 
 -- | A bidirectional pattern synonym matching closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:|-|:) :: (Ord x) => Suspension x -> Suspension x -> Interval x
-pattern l :|-|: u <-
-  Min l :|--|: Max u
-  where
-    b1 :|-|: b2 = Min (min b1 b2) :|--|: Max (max b1 b2)
+pattern (:|-|:) ::
+  forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
+pattern l :|-|: u <- Min l :|--|: Max u
+ where
+  b1 :|-|: b2 = Min (min b1 b2) :|--|: Max (max b1 b2)
 
 {-# COMPLETE (:<->:), (:<-|:), (:|->:), (:|-|:) #-}
 
 -- | A unidirectional pattern synonym ignoring the particular 'Bound's.
-pattern (:---:) :: forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
+pattern (:---:) ::
+  forall x. (Ord x) => Suspension x -> Suspension x -> Interval x
 pattern l :---: u <-
   (bounds -> (SomeBound (unBound -> l), SomeBound (unBound -> u)))
 
@@ -453,60 +453,61 @@ infix 5 :||:
 -- | A bidirectional pattern synonym matching finite open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<>: u <-
-  Meridian l :<->: Meridian u
-  where
-    b1 :<>: b2 =
-      let inf = Meridian (min b1 b2)
-          sup = Meridian (max b1 b2)
-       in case compare b1 b2 of
-            EQ -> Min inf :|--|: Max sup
-            _ -> Inf inf :<-->: Sup sup
+pattern (:<>:) ::
+  forall x. (Ord x) => x -> x -> Interval x
+pattern l :<>: u <- Meridian l :<->: Meridian u
+ where
+  b1 :<>: b2 =
+    let inf = Meridian (min b1 b2)
+        sup = Meridian (max b1 b2)
+     in case compare b1 b2 of
+          EQ -> Min inf :|--|: Max sup
+          _ -> Inf inf :<-->: Sup sup
 
 -- | A bidirectional pattern synonym matching finite open-closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:<|:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :<|: u <-
-  Meridian l :<-|: Meridian u
-  where
-    b1 :<|: b2 =
-      let inf = Meridian (min b1 b2)
-          sup = Meridian (max b1 b2)
-       in case compare b1 b2 of
-            LT -> Inf inf :<--|: Max sup
-            EQ -> Min inf :|--|: Max sup
-            GT -> Min inf :|-->: Sup sup
+pattern (:<|:) ::
+  forall x. (Ord x) => x -> x -> Interval x
+pattern l :<|: u <- Meridian l :<-|: Meridian u
+ where
+  b1 :<|: b2 =
+    let inf = Meridian (min b1 b2)
+        sup = Meridian (max b1 b2)
+     in case compare b1 b2 of
+          LT -> Inf inf :<--|: Max sup
+          EQ -> Min inf :|--|: Max sup
+          GT -> Min inf :|-->: Sup sup
 
 -- | A bidirectional pattern synonym matching finite closed-open intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:|>:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :|>: u <-
-  Meridian l :|->: Meridian u
-  where
-    b1 :|>: b2 =
-      let inf = Meridian (min b1 b2)
-          sup = Meridian (max b1 b2)
-       in case compare b1 b2 of
-            LT -> Min inf :|-->: Sup sup
-            EQ -> Min inf :|--|: Max sup
-            GT -> Inf inf :<--|: Max sup
+pattern (:|>:) ::
+  forall x. (Ord x) => x -> x -> Interval x
+pattern l :|>: u <- Meridian l :|->: Meridian u
+ where
+  b1 :|>: b2 =
+    let inf = Meridian (min b1 b2)
+        sup = Meridian (max b1 b2)
+     in case compare b1 b2 of
+          LT -> Min inf :|-->: Sup sup
+          EQ -> Min inf :|--|: Max sup
+          GT -> Inf inf :<--|: Max sup
 
 -- | A bidirectional pattern synonym matching finite closed intervals.
 --
 -- This pattern synonym performs normalization.
-pattern (:||:) :: forall x. (Ord x) => x -> x -> Interval x
-pattern l :||: u <-
-  Meridian l :|-|: Meridian u
-  where
-    b1 :||: b2 = Min (Meridian (min b1 b2)) :|--|: Max (Meridian (max b1 b2))
+pattern (:||:) ::
+  forall x. (Ord x) => x -> x -> Interval x
+pattern l :||: u <- Meridian l :|-|: Meridian u
+ where
+  b1 :||: b2 = Min (Meridian (min b1 b2)) :|--|: Max (Meridian (max b1 b2))
 
 -- |
 -- A unidirectional pattern synonym matching finite intervals,
 -- that ignores the particular 'Bound's.
-pattern (:--:) :: forall x. (Ord x) => x -> x -> Interval x
+pattern (:--:) ::
+  forall x. (Ord x) => x -> x -> Interval x
 pattern l :--: u <-
   ( bounds ->
       (SomeBound (unBound -> Meridian l), SomeBound (unBound -> Meridian u))
@@ -515,6 +516,14 @@ pattern l :--: u <-
 -- | The whole interval, 'South' ':|-|:' 'North'.
 pattern Whole :: (Ord x) => Interval x
 pattern Whole = South :|-|: North
+
+instance Morphisms (~>) (->) Interval where
+  morphism :: (x ~> y) -> Interval x -> Interval y
+  morphism (OrdArrow x_y) = \case
+    l :<->: u -> morphism x_y l :<->: morphism x_y u
+    l :|->: u -> morphism x_y l :|->: morphism x_y u
+    l :<-|: u -> morphism x_y l :<-|: morphism x_y u
+    l :|-|: u -> morphism x_y l :|-|: morphism x_y u
 
 deriving instance (Ord x) => Eq (Interval x)
 
@@ -1199,7 +1208,8 @@ symmetricDifference i1 i2 = case i1 `union` i2 of
 -- >>> measure (South :<->: Meridian 1)
 -- Nothing
 -- @
-measure :: forall x. (Ord x, Additive x, Subtraction x x x) => Interval x -> Maybe x
+measure ::
+  forall x. (Ord x, Additive x, Subtraction x x x) => Interval x -> Maybe x
 measure = measuring (flip (-))
 
 -- | Apply a function to the lower, then upper, endpoint of an interval.
@@ -1233,7 +1243,8 @@ measuring f = \case
 -- >>> hausdorff (3 :<>: 5) Whole
 -- Just 0
 -- @
-hausdorff :: (Ord x, Additive x, Subtraction x x x) => Interval x -> Interval x -> Maybe x
+hausdorff ::
+  (Ord x, Additive x, Subtraction x x x) => Interval x -> Interval x -> Maybe x
 hausdorff i1 i2 = case adjacency i1 i2 of
   Before (_ :---: a) (b :---: _) -> suspensionMaybe (liftA2 (-) b a)
   After (_ :---: a) (b :---: _) -> suspensionMaybe (liftA2 (-) b a)

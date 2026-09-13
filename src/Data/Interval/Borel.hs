@@ -35,10 +35,8 @@ import Data.Interval (Interval)
 import Data.Interval qualified as I
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe
-import Data.Monoid (Monoid (mempty))
 import Data.OneOrTwo (OneOrTwo (..))
 import Data.Ord (Ord (..))
-import Data.Semigroup (Semigroup ((<>)))
 import Data.Set (Set)
 import Data.Set qualified as Set
 import GHC.Generics (Generic)
