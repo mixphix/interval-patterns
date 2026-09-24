@@ -1,28 +1,28 @@
-module Data.Interval.Layers (
-  Layers (Layers),
-  Data.Interval.Layers.fromList,
-  Data.Interval.Layers.toList,
-  empty,
-  singleton,
-  shadow,
-  shadowing,
-  ishadowing,
-  land,
-  landAbove,
-  height,
-  tallest,
-  remove,
-  (\-),
-  difference,
-  trim,
-  (\=),
-  toStepFunction,
-  area,
-  areaRing,
+module Data.Interval.Layers
+  ( Layers (Layers)
+  , Data.Interval.Layers.fromList
+  , Data.Interval.Layers.toList
+  , empty
+  , singleton
+  , shadow
+  , shadowing
+  , ishadowing
+  , land
+  , landAbove
+  , height
+  , tallest
+  , remove
+  , (\-)
+  , difference
+  , trim
+  , (\=)
+  , toStepFunction
+  , area
+  , areaRing
 
-  -- ** Helper functions
-  nestings,
-) where
+    -- ** Helper functions
+  , nestings
+  ) where
 
 import Data.Bool
 import Data.Data (Data)
@@ -32,13 +32,13 @@ import Data.Function (const, flip, ($))
 import Data.Functor qualified as Data
 import Data.Heap (Heap)
 import Data.Heap qualified as Heap
-import Data.Interval (
-  Adjacency (..),
-  Interval,
-  OneOrTwo (..),
-  data (:---:),
-  data (:|-|:),
- )
+import Data.Interval
+  ( Adjacency (..)
+  , Interval
+  , OneOrTwo (..)
+  , data (:---:)
+  , data (:|-|:)
+  )
 import Data.Interval qualified as Interval
 import Data.Interval.Borel (Borel)
 import Data.Interval.Borel qualified as Borel
@@ -59,7 +59,8 @@ import Flex.Math.Category
 -- The 'Layers' of an ordered type @x@ are like the 'Borel' sets,
 -- but that keeps track of how far each point has been "raised" in @y@.
 newtype Layers x y = Layers (Map (Interval x) y)
-  deriving (Eq, Ord, Show, Data.Functor, Data.Foldable, Data.Traversable, Generic, Data)
+  deriving
+    (Eq, Ord, Show, Data.Functor, Data.Foldable, Data.Traversable, Generic, Data)
 
 instance Morphisms (->) (->) (Layers x) where
   morphism :: (z -> y) -> Layers x z -> Layers x y
@@ -77,31 +78,38 @@ instance Traversals (->) (->) (Layers x) where
   traverse :: (Applicative g) => (z -> g y) -> Layers x z -> g (Layers x y)
   traverse z_gy (Layers m) = morphism Layers (traverse z_gy m)
 instance Traversals (Ix (Interval x)) (->) (Layers x) where
-  traverse :: (Applicative g) => Ix (Interval x) z (g y) -> Layers x z -> g (Layers x y)
+  traverse ::
+    (Applicative g) => Ix (Interval x) z (g y) -> Layers x z -> g (Layers x y)
   traverse (Ix i_z_gy) (Layers m) = morphism Layers (traverse (Ix i_z_gy) m)
 
-instance (Ord x, Ord y, Additive y) => Semigroup (Layers x y) where
+instance (Ord x, Additive y) => Semigroup (Layers x y) where
   (<>) :: Layers x y -> Layers x y -> Layers x y
   Layers s1 <> Layers s2 =
     Layers
       . Map.fromAscList
+      . morphism (\(Arg i y) -> (i, y))
       . nestingsAsc
       . Heap.fromList
-      $ Map.toAscList (Map.unionWith (+) s1 s2)
+      . morphism (uncurry Arg)
+      . Map.toAscList
+      $ Map.unionWith (+) s1 s2
 
-instance (Ord x, Ord y, Additive y) => Monoid (Layers x y) where
+instance (Ord x, Additive y) => Monoid (Layers x y) where
   mempty :: Layers x y
   mempty = empty
 
-instance (Ord x, Ord y, Additive y) => Addition (Layers x y) (Layers x y) (Layers x y) where
+instance (Ord x, Additive y) => Addition (Layers x y) (Layers x y) (Layers x y) where
   (+.) :: Layers x y -> Layers x y -> Layers x y
   (+.) = (<>)
 
-instance (Ord x, Ord y, Additive y) => Additive (Layers x y) where
+instance (Ord x, Additive y) => Additive (Layers x y) where
   zero :: Layers x y
   zero = mempty
 
-instance (Ord x, Ord y, AdditiveGroup y) => Subtraction (Layers x y) (Layers x y) (Layers x y) where
+instance
+  (Ord x, Ord y, AdditiveGroup y) =>
+  Subtraction (Layers x y) (Layers x y) (Layers x y)
+  where
   (-.) :: Layers x y -> Layers x y -> Layers x y
   s -. t = s + Data.fmap negative t
 
@@ -117,7 +125,10 @@ instance (Ord x, Ord y, Additive y) => Addition (Layers x y) (Interval x, y) (La
   (+.) :: Layers x y -> (Interval x, y) -> Layers x y
   (+.) = flip (+.)
 
-instance (Ord x, Ord y, AdditiveGroup y) => Subtraction (Layers x y) (Interval x, y) (Layers x y) where
+instance
+  (Ord x, Ord y, AdditiveGroup y) =>
+  Subtraction (Layers x y) (Interval x, y) (Layers x y)
+  where
   (-.) :: Layers x y -> (Interval x, y) -> Layers x y
   l -. (ix, y) = l - singleton ix y
 
@@ -130,8 +141,12 @@ singleton :: (Ord x) => Interval x -> y -> Layers x y
 singleton ix y = Layers (Map.singleton ix y)
 
 -- | Draw the 'Layers' of specified supports and heights.
-fromList :: (Ord x, Ord y, Additive y) => [(Interval x, y)] -> Layers x y
-fromList = Layers . Map.fromList . nestings
+fromList :: (Ord x, Additive y) => [Arg (Interval x) y] -> Layers x y
+fromList =
+  Layers
+    . Map.fromList
+    . morphism (\(Arg i y) -> (i, y))
+    . nestings
 
 -- | Get all of the supports and heights in the 'Layers'.
 toList :: (Ord x) => Layers x y -> [(Interval x, y)]
@@ -167,14 +182,16 @@ remove ix (Layers s) = flip (`Map.foldlWithKey'` empty) s \acc jx y ->
   acc <> case jx Interval.\\ ix of
     Nothing -> mempty
     Just (One kx) -> singleton kx y
-    Just (Two kx lx) -> fromList [(kx, y), (lx, y)]
+    Just (Two kx lx) -> fromList [Arg kx y, Arg lx y]
 
 -- | Fliped infix version of 'remove'.
 (\-) :: (Ord x, Ord y, Additive y) => Layers x y -> Interval x -> Layers x y
 (\-) = flip remove
 
 -- | Pointwise subtraction of the second argument from the first.
-difference :: (Ord x, Ord y, Semigroup y, AdditiveGroup y) => Layers x y -> Layers x y -> Layers x y
+difference ::
+  (Ord x, Ord y, Semigroup y, AdditiveGroup y) =>
+  Layers x y -> Layers x y -> Layers x y
 difference layers (Layers s) =
   foldr (flip (-.)) layers (Map.toAscList s)
 
@@ -242,49 +259,43 @@ toStepFunction = go . Data.Interval.Layers.toList
     [] -> []
 
 nestings ::
-  (Ord x, Ord y, Additive y) =>
-  [(Interval x, y)] ->
-  [(Interval x, y)]
+  (Ord x, Additive y) =>
+  [Arg (Interval x) y] ->
+  [Arg (Interval x) y]
 nestings = nestingsAsc . Heap.fromList
 
 nestingsAsc ::
-  (Ord x, Ord y, Additive y) =>
-  Heap (Interval x, y) ->
-  [(Interval x, y)]
+  (Ord x, Additive y) =>
+  Heap (Arg (Interval x) y) ->
+  [Arg (Interval x) y]
 nestingsAsc heap = case firstTwo of
   Nothing -> Data.toList heap
-  Just ((i', iy), (j', jy), js) -> case Interval.adjacency i' j' of
-    Before i j -> (i, iy) : nestingsAsc (Heap.insert (j, jy) js)
+  Just (Arg i' iy, Arg j' jy, js) -> case Interval.adjacency i' j' of
+    Before i j ->
+      Arg i iy : nestingsAsc (Heap.insert (Arg j jy) js)
     Meets i j k ->
-      (i, iy) : nestingsAsc (Heap.fromList [(j, iy + jy), (k, jy)] <> js)
-    Overlaps i j k ->
-      nestingsAsc do
-        Heap.fromList [(i, iy), (j, iy + jy), (k, jy)] <> js
-    Starts i j ->
-      nestingsAsc do
-        Heap.fromList [(i, iy + jy), (j, jy)] <> js
-    During i j k ->
-      nestingsAsc do
-        Heap.fromList [(i, jy), (j, iy + jy), (k, jy)] <> js
-    Finishes i j ->
-      nestingsAsc do
-        Heap.fromList [(i, iy), (j, iy + jy)] <> js
-    Identical i -> nestingsAsc (Heap.insert (i, iy + jy) js)
-    FinishedBy i j ->
-      nestingsAsc do
-        Heap.fromList [(i, iy), (j, iy + jy)] <> js
-    Contains i j k ->
-      nestingsAsc do
-        Heap.fromList [(i, iy), (j, iy + jy), (k, iy)] <> js
-    StartedBy i j ->
-      nestingsAsc do
-        Heap.fromList [(i, iy + jy), (j, iy)] <> js
-    OverlappedBy i j k ->
-      nestingsAsc do
-        Heap.fromList [(i, jy), (j, iy + jy), (k, iy)] <> js
+      Arg i iy : nestingsAsc (Heap.fromList [Arg j (iy + jy), Arg k jy] <> js)
+    Overlaps i j k -> nestingsAsc do
+      Heap.fromList [Arg i iy, Arg j (iy + jy), Arg k jy] <> js
+    Starts i j -> nestingsAsc do
+      Heap.fromList [Arg i (iy + jy), Arg j jy] <> js
+    During i j k -> nestingsAsc do
+      Heap.fromList [Arg i jy, Arg j (iy + jy), Arg k jy] <> js
+    Finishes i j -> nestingsAsc do
+      Heap.fromList [Arg i iy, Arg j (iy + jy)] <> js
+    Identical i -> nestingsAsc (Heap.insert (Arg i (iy + jy)) js)
+    FinishedBy i j -> nestingsAsc do
+      Heap.fromList [Arg i iy, Arg j (iy + jy)] <> js
+    Contains i j k -> nestingsAsc do
+      Heap.fromList [Arg i iy, Arg j (iy + jy), Arg k iy] <> js
+    StartedBy i j -> nestingsAsc do
+      Heap.fromList [Arg i (iy + jy), Arg j iy] <> js
+    OverlappedBy i j k -> nestingsAsc do
+      Heap.fromList [Arg i jy, Arg j (iy + jy), Arg k iy] <> js
     MetBy i j k ->
-      (i, jy) : nestingsAsc (Heap.fromList [(j, iy + jy), (k, iy)] <> js)
-    After i j -> (i, jy) : nestingsAsc (Heap.insert (j, iy) js)
+      Arg i jy : nestingsAsc (Heap.fromList [Arg j (iy + jy), Arg k iy] <> js)
+    After i j ->
+      Arg i jy : nestingsAsc (Heap.insert (Arg j iy) js)
  where
   firstTwo = do
     (min1, heap') <- Heap.uncons heap
