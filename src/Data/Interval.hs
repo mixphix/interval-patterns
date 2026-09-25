@@ -114,7 +114,6 @@ import Data.Bool
 import Data.Bounded (Bounded)
 import Data.Data
 import Data.Enum (Enum)
-import Data.Eq (Eq (..))
 import Data.Foldable qualified as Data
 import Data.Function (flip, on)
 import Data.Functor qualified as Data
@@ -125,7 +124,6 @@ import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe
 import Data.OneOrTwo (OneOrTwo (..))
-import Data.Ord (Ord (..), Ordering (..), comparing)
 import Data.String (String)
 import Data.Traversable qualified as Data
 import Data.Tuple
@@ -136,8 +134,8 @@ import GHC.Generics (Generic (..), type (:*:) (..))
 import Text.Read (Read)
 import Text.Show (Show (show))
 
-import Flex.Math
-import Flex.Math.Category hiding (itraverse)
+import Flex.Math hiding (itraverse)
+import Flex.Math.Category (type (~>) (OrdArrow))
 
 -- | The kinds of extremum an interval can have.
 data Extremum

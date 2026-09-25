@@ -17,7 +17,6 @@ module Data.Calendar (
   totalDuration,
 ) where
 
-import Data.Eq
 import Data.Function (flip)
 import Data.Interval qualified as I
 import Data.Interval.Layers (Layers)
@@ -25,14 +24,12 @@ import Data.Interval.Layers qualified as Layers
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe
-import Data.Ord
 import Data.Time
 import Data.Timeframe
 import Data.Tuple
 import GHC.Show (Show)
 
-import Flex.Math
-import Flex.Math.Category
+import Flex.Math hiding ((!))
 
 -- | An 'Event' is a collection of 'Timeframe's that keeps track of
 -- how deeply a particular interval has been overlapped.
