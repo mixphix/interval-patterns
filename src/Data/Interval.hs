@@ -136,8 +136,7 @@ import GHC.Generics (Generic (..), type (:*:) (..))
 import Text.Read (Read)
 import Text.Show (Show (show))
 
-import Flex.Math
-import Flex.Math.Category hiding (itraverse)
+import Flex.Math hiding (itraverse)
 
 -- | The kinds of extremum an interval can have.
 data Extremum
